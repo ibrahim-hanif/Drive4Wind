@@ -1,0 +1,16 @@
+name: mbs4wind
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - numpy
+  - scipy
+  - matplotlib
+  - pip
+  - pytest
+  - pytest-cov
+  - black
+  - flake8
+  - pip:
+    - openmdao
