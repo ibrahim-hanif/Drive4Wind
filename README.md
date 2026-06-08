@@ -1,5 +1,8 @@
 # MBs4Wind
 
+**Main Bearings 4 [floating] Wind turbines**
+result of the EU project Made4Wind
+
 **Main Bearing Design, Analysis and Optimization (MDAO) for large floating offshore wind turbines**
 
 A Python package for main bearing design, analysis, and multi-disciplinary optimization of drivetrains in large floating offshore wind turbines.
