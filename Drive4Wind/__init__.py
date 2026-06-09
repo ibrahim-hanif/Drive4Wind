@@ -9,11 +9,21 @@ __version__ = "0.1.0"
 __author__ = "Vasudev Gupta"
 __email__ = "vasudev.gupta@ntnu.no"
 
-# Import main modules
-from . import mainbearings
-from . import utilities
-from . import data
-from . import core
+# Lazy imports to avoid circular import issues
+def __getattr__(name):
+    if name == "mainbearings":
+        from . import mainbearings
+        return mainbearings
+    elif name == "utilities":
+        from . import utilities
+        return utilities
+    elif name == "data":
+        from . import data
+        return data
+    elif name == "core":
+        from . import core
+        return core
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 __all__ = [
     "__version__",
