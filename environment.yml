@@ -1,4 +1,4 @@
-name: mbs4wind
+name: drive4wind
 channels:
   - conda-forge
   - defaults

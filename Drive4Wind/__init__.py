@@ -1,5 +1,5 @@
 """
-MBs4Wind: Main Bearing Design, Analysis and Optimization for Large Floating Offshore Wind Turbines
+Drive4Wind: Main Bearing Design, Analysis and Optimization for Large Floating Offshore Wind Turbines
 
 A Python package for main bearing design, analysis, and multi-disciplinary optimization 
 of drivetrains in large floating offshore wind turbines.

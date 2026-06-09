@@ -1,4 +1,4 @@
-# MBs4Wind
+# Drive4Wind
 
 **Main Bearings 4 [floating] Wind turbines**
 result of the EU project Made4Wind
