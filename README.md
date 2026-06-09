@@ -1,9 +1,8 @@
 # Drive4Wind
 
-**Main Bearings 4 [floating] Wind turbines**
-result of the EU project Made4Wind
+**An open toolbox for fatigue-reliability-aware design and optimization of geared wind turbine drivetrains**
 
-**Main Bearing Design, Analysis and Optimization (MDAO) for large floating offshore wind turbines**
+result of the EU project Made4Wind
 
 A Python package for main bearing design, analysis, and multi-disciplinary optimization of drivetrains in large floating offshore wind turbines.
 
