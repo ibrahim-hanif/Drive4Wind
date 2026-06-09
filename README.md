@@ -19,8 +19,8 @@ A Python package for main bearing design, analysis, and multi-disciplinary optim
 ### From source
 
 ```bash
-git clone https://github.com/yourusername/MBs4Wind.git
-cd MBs4Wind
+git clone https://github.com/yourusername/Drive4Wind.git
+cd Drive4Wind
 pip install -e .
 ```
 
@@ -52,14 +52,14 @@ pip install -e ".[wisdem,pyoptsparse,dev]"
 ## Quick Start
 
 ```python
-import MBs4Wind
+import Drive4Wind
 
 # Your code here
 ```
 
 ## Documentation
 
-For more detailed documentation, visit the [wiki](https://github.com/yourusername/MBs4Wind/wiki).
+For more detailed documentation, visit the [wiki](https://github.com/yourusername/Drive4Wind/wiki).
 
 ## Testing
 
@@ -75,11 +75,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Citation
 
-If you use MBs4Wind in your research, please cite it as:
+If you use Drive4Wind in your research, please cite it as:
 
 ```
-Gupta, V. (2026). MBs4Wind: Main bearing design, analysis and optimization for floating offshore wind turbines. 
-Retrieved from https://github.com/yourusername/MBs4Wind
+Gupta, V. (2026). Drive4Wind: Drivetrain design, analysis and optimization for floating offshore wind turbines. 
+Retrieved from https://github.com/yourusername/Drive4Wind
 ```
 
 ## Contributing
@@ -92,6 +92,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Acknowledgments
 
-- Developed at NTNU (Norwegian University of Science and Technology)
+- Developed at NTNU (Norwegian University of Science and Technology), IMT (Dept. of Marine Technology)
 - Built for [WISDEM](https://github.com/WISDEM/WISDEM) framework
 - Uses [OpenMDAO](https://openmdao.org/) for multidisciplinary optimization
