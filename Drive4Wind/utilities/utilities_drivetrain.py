@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-from post_processing.color_schemes import loc_clr_scheme_m4w, read_color_scheme
+from Drive4Wind.post_processing.color_schemes import loc_clr_scheme_m4w, read_color_scheme
 
 clrs_m4w = read_color_scheme( loc_clr_scheme_m4w )
 
