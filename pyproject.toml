@@ -41,8 +41,9 @@ Documentation = "https://github.com/ibrahim-hanif/Drive4Wind/wiki"
 Repository = "https://github.com/ibrahim-hanif/Drive4Wind.git"
 Issues = "https://github.com/ibrahim-hanif/Drive4Wind/issues"
 
-[tool.setuptools]
-packages = ["Drive4Wind"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["Drive4Wind*"]
 
 [tool.black]
 line-length = 100
