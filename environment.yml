@@ -1,16 +1,12 @@
-name: drive4wind
+name: drive4wind-dev
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - python
-  - numpy
-  - scipy
-  - matplotlib
+  - python=3.11
   - pip
   - pytest
-  - pytest-cov
   - black
   - flake8
   - pip:
-    - openmdao
+    - packaging  # Only needed for version validation utility

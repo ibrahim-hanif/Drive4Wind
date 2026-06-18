@@ -12,7 +12,7 @@ license = {text = "MIT"}
 authors = [
     {name = "Vasudev Gupta", email = "vasudev.gupta@ntnu.no"}
 ]
-keywords = ["wind", "turbine", "bearing", "design", "optimization", "MDAO", "wisdem"]
+keywords = ["wind", "turbine", "bearing", "design", "optimization", "MDAO"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
@@ -22,10 +22,15 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Environment :: Plugins",
 ]
-# NO DEPENDENCIES - this is a WISDEM/WEIS plugin that relies on host environment
-dependencies = []
+
+dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+    "openmdao>=3.0.0",
+    "matplotlib>=3.0.0",
+    "nlopt>=2.7.0",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -34,12 +39,18 @@ dev = [
     "black>=22.0.0",
     "flake8>=4.0.0",
 ]
+wisdem = [
+    "wisdem>=3.0.0",
+]
+pyoptsparse = [
+    "pyoptsparse>=2.0.0",
+]
 
 [project.urls]
-Homepage = "https://github.com/ibrahim-hanif/Drive4Wind"
-Documentation = "https://github.com/ibrahim-hanif/Drive4Wind/wiki"
-Repository = "https://github.com/ibrahim-hanif/Drive4Wind.git"
-Issues = "https://github.com/ibrahim-hanif/Drive4Wind/issues"
+Homepage = "https://github.com/yourusername/MBs4Wind"
+Documentation = "https://github.com/yourusername/MBs4Wind/wiki"
+Repository = "https://github.com/yourusername/MBs4Wind.git"
+Issues = "https://github.com/yourusername/MBs4Wind/issues"
 
 [tool.setuptools]
 packages = ["Drive4Wind"]

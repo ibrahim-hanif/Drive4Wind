@@ -1,4 +1,4 @@
-"""Setup configuration for MBs4Wind package"""
+"""Setup configuration for Drive4Wind package"""
 from setuptools import setup, find_packages
 
 setup(
