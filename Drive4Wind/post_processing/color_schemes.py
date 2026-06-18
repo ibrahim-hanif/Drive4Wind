@@ -1,8 +1,12 @@
 #%%
 import csv
 import numpy as np
+import os
 # ---------------
-loc_clr_scheme_m4w = "./color-scheme-made4wind.csv"
+loc_clr_scheme_m4w = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "color-scheme-made4wind.csv"
+)
 
 plot_rcParams_update = {
         "font.size": 24,
