@@ -180,14 +180,14 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower ):
     props_bed["flange_thickness"] = prob["bedplate_flange_thickness"][0]
     props_bed["web_thickness"] = prob["bedplate_web_thickness"][0]
     props_bed["material"] = prob["bedplate_material"]
-    # ------ others components
-    props_other = props_DT["others_components"] = {}
+    # ------ other components
+    props_other = props_DT["other_components"] = {}
     props_other["mb1Type"] = prob["bear1.bearing_type"]
     props_other["mb2Type"] = prob["bear2.bearing_type"]
     props_other["mb1_e"] = prob["bear1.mb_e"][0]
     props_other["mb2_e"] = prob["bear2.mb_e"][0]
     props_other["uptower"] = bool(prob["uptower"]) # save uptower boolean as boolean not string
-    props_other["converter_mass_user"] = prob["converter_mass_user"][0]
+    props_other["converter_mass"] = prob["converter_mass_user"][0]
     # ------ generator
     props_gen = props_DT["generator"] = {}
     props_gen["mass"] = prob["generator_mass_user"][0]
