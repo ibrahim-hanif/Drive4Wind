@@ -149,52 +149,51 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower ):
     # ---- drivetrain
     props_DT = props_geo["drivetrain"] = {}
 
-    props_DT["uptilt"] = np.deg2rad(prob["tilt"])[0]
-    props_DT["distance_tt_hub"] = prob["drive_height"][0]
-
-    props_DT["distance_hub_mb"] = prob["L_h1"][0]
-    props_DT["distance_mb_mb"] = prob["L_12"][0]
-    props_DT["overhang"] = prob["overhang"][0]
-    
-    props_DT["gear_ratio"] = prob["gear_ratio"][0]
-    props_DT["gearbox_mass_user"] = prob["gearbox_mass_user"][0]
-    props_DT["gearbox_efficiency"] = 0.992 # TODO: hard coded here
-    props_DT["gearbox_length_user"] = prob["gearbox_length_user"][0]
-    props_DT["gearbox_radius_user"] = prob["gearbox_radius_user"][0]
-
-    
-    props_DT["lss_diameter"] = prob["lss_diameter"].tolist()
-    props_DT["lss_wall_thickness"] = prob["lss_wall_thickness"].tolist()
-    props_DT["lss_material"] = prob["lss_material"]
-
-    props_DT["hss_length"] = prob["L_hss"][0]
-    props_DT["hss_diameter"] = prob["hss_diameter"].tolist()
-    props_DT["hss_wall_thickness"] = prob["hss_wall_thickness"].tolist()
-    props_DT["hss_material"] = prob["hss_material"]
-
-    
-    props_DT["bedplate_flange_width"] = prob["bedplate_flange_width"][0]
-    props_DT["bedplate_flange_thickness"] = prob["bedplate_flange_thickness"][0]
-    props_DT["bedplate_web_thickness"] = prob["bedplate_web_thickness"][0]
-    props_DT["bedplate_material"] = prob["bedplate_material"]
-    
-    
-    props_DT["mb1Type"] = prob["bear1.bearing_type"]
-    props_DT["mb2Type"] = prob["bear2.bearing_type"]
-    props_DT["mb1_e"] = prob["bear1.mb_e"][0]
-    props_DT["mb2_e"] = prob["bear2.mb_e"][0]
-
-    # save uptower boolean as boolean not string
-    props_DT["uptower"] = bool(prob["uptower"])
-
-    props_DT["converter_mass_user"] = prob["converter_mass_user"][0]
-
-    # ---- generator
-    props_gen = props_geo["generator"] = {}
-    props_gen["generator_mass_user"] = prob["generator_mass_user"][0]
-    props_gen["generator_length"] = prob["L_generator"][0]
-    props_gen["generator_radius_user"] = prob["generator_radius_user"][0]
-    props_gen["generator_rpm_efficiency_user"] = {
+    # ------ outer shape
+    props_outer = props_DT["outer_shape"] = {}
+    props_outer["uptilt"] = prob["tilt"][0] # windio 2.x needs in deg
+    props_outer["distance_tt_hub"] = prob["drive_height"][0]
+    props_outer["distance_hub_mb"] = prob["L_h1"][0]
+    props_outer["distance_mb_mb"] = prob["L_12"][0]
+    props_outer["overhang"] = prob["overhang"][0]
+    # ------ gearbox
+    props_gb = props_DT["gearbox"] = {}
+    props_gb["gear_ratio"] = prob["gear_ratio"][0]
+    props_gb["mass"] = prob["gearbox_mass_user"][0]
+    props_gb["efficiency"] = 0.992 # TODO: hard coded here
+    props_gb["length"] = prob["gearbox_length_user"][0]
+    props_gb["radius"] = prob["gearbox_radius_user"][0]
+    # ------ lss
+    props_lss = props_DT["lss"] = {}
+    props_lss["diameter"] = prob["lss_diameter"].tolist()
+    props_lss["wall_thickness"] = prob["lss_wall_thickness"].tolist()
+    props_lss["material"] = prob["lss_material"]
+    # ------ hss
+    props_hss = props_DT["hss"] = {}
+    props_hss["length"] = prob["L_hss"][0]
+    props_hss["diameter"] = prob["hss_diameter"].tolist()
+    props_hss["wall_thickness"] = prob["hss_wall_thickness"].tolist()
+    props_hss["material"] = prob["hss_material"]
+    # ------ bedplate
+    props_bed = props_DT["bedplate"] = {}
+    props_bed["flange_width"] = prob["bedplate_flange_width"][0]
+    props_bed["flange_thickness"] = prob["bedplate_flange_thickness"][0]
+    props_bed["web_thickness"] = prob["bedplate_web_thickness"][0]
+    props_bed["material"] = prob["bedplate_material"]
+    # ------ others components
+    props_other = props_DT["others_components"] = {}
+    props_other["mb1Type"] = prob["bear1.bearing_type"]
+    props_other["mb2Type"] = prob["bear2.bearing_type"]
+    props_other["mb1_e"] = prob["bear1.mb_e"][0]
+    props_other["mb2_e"] = prob["bear2.mb_e"][0]
+    props_other["uptower"] = bool(prob["uptower"]) # save uptower boolean as boolean not string
+    props_other["converter_mass_user"] = prob["converter_mass_user"][0]
+    # ------ generator
+    props_gen = props_DT["generator"] = {}
+    props_gen["mass"] = prob["generator_mass_user"][0]
+    props_gen["length"] = prob["L_generator"][0]
+    props_gen["radius"] = prob["generator_radius_user"][0]
+    props_gen["rpm_efficiency"] = {
         "grid": prob["generator_efficiency_user"][0,:].tolist(),
         "values": prob["generator_efficiency_user"][1,:].tolist()
     }
