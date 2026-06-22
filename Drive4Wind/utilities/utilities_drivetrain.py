@@ -222,7 +222,8 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower ):
 # ==========
 
 # ==========
-def plot_drivetrain_mass_comparison( prob, loc_save_img=None ):
+def plot_drivetrain_mass_comparison( prob, loc_save_img=None,
+                                    m4w_label='Made4Wind', iea_label='IEA 15MW' ):
     """
     plot drivetrain or nacelle mass breakdown comparison between
     IEA 15 MW report and M4W results
@@ -334,7 +335,7 @@ def plot_drivetrain_mass_comparison( prob, loc_save_img=None ):
     fig, ax = plt.subplots(figsize=(14, 14))
 
     x = np.array([0, 1])
-    labels = ["IEA 15 MW", "MADE4WIND 15 MW"]
+    labels = [iea_label, m4w_label]
     bar_width = 0.45
 
     # --- Stacking ---
