@@ -8,8 +8,10 @@ Created by Vasudev Gupta on 2026-06-22. Dept. of Marine Technology, NTNU. All ri
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 import os
 import wisdem.inputs as sch
+from wisdem.commonse.fileIO import var_df2dict
 from Drive4Wind.post_processing.color_schemes import loc_clr_scheme_m4w, read_color_scheme
 
 clrs_m4w = read_color_scheme( loc_clr_scheme_m4w )
@@ -367,4 +369,67 @@ if __name__ == "__main__":
     # plot
     plot_loads_TT_comparison(m4w, iea)
 
+# %%[markdown]
+# ### Comparing loading conditions at tower-base and plotting
 # %%
+def get_towerBaseLoads_from_csv( loc_csv ):
+    df = pd.read_csv(loc_csv)
+    dict = var_df2dict(df)
+    towerBaseLoads_dict = {
+        "F": np.array(eval(dict["towerse.tower.turbine_F"])).reshape(3,),
+        "M": np.array(eval(dict["towerse.tower.turbine_M"])).reshape(3,)
+        }
+    return towerBaseLoads_dict
+
+#%%
+def plot_compr_towerBaseLoads_from_dict( m4w_dict, iea_dict,
+            m4w_label="Made4Wind", iea_label="IEA 15MW", figsize=(12,8),
+            clrs=clrs_m4w, loc_save_img=None ):
+      
+    colors = [ clrs['Light_Green'], clrs['Aqua'] ]
+
+    fig, axs = plt.subplots(1,2,figsize=figsize)
+    plt.suptitle("Tower-base loads comparison")
+
+    x = np.arange(3)
+    width = 0.35
+    # --------------------------------------------------
+    # (3) Forces
+    # --------------------------------------------------
+    ax = axs[0]
+    labels_F = [r'$F_x$', r'$F_y$', r'$F_z$']
+    x = np.arange(3)
+
+    ax.bar(x - width/2, iea_dict['F']/1e6,
+                width, color=colors[0], label=iea_label)
+    ax.bar(x + width/2, m4w_dict['F']/1e6,
+                width, color=colors[1], label=m4w_label)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels_F)
+    ax.set_ylabel('Force '+r'$[MN]$')
+    # ax.set_title('Forces Comparison')
+    ax.legend()
+    ax.grid(True)
+
+    # --------------------------------------------------
+    # (4) Moments
+    # --------------------------------------------------
+    ax = axs[1]
+    labels_M = [r'$M_x$', r'$M_y$', r'$M_z$']
+    x = np.arange(3)
+
+    ax.bar(x - width/2, iea_dict['M']/1e6,
+        width, color=colors[0])
+    ax.bar(x + width/2, m4w_dict['M']/1e6,
+        width, color=colors[1])
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels_M)
+    ax.set_ylabel('Moment '+r'$[MNm]$')
+    # ax.set_title('Moments Comparison')
+    ax.grid(True)
+
+    plt.tight_layout()
+    if loc_save_img: plt.savefig(loc_save_img)
+    plt.show()
