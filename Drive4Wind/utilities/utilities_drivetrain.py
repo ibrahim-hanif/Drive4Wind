@@ -161,6 +161,7 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
     props_outer["distance_hub_mb"] = prob[prefix+"L_h1"][0]
     props_outer["distance_mb_mb"] = prob[prefix+"L_12"][0]
     props_outer["overhang"] = prob[prefix+"overhang"][0]
+    props_outer["cd"] = 0.5
     # ------ gearbox
     props_gb = props_DT["gearbox"] = {}
     props_gb["gear_ratio"] = prob[prefix+"gear_ratio"][0]
