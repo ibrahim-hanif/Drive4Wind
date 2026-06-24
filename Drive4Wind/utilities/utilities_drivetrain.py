@@ -3,6 +3,7 @@ utilities_drivetrain.py
 
 written by Vasudev Gupta, IMT NTNU Norway, 2026-05-19
 """
+#%%
 import openmdao as om
 import numpy as np
 import pandas as pd
@@ -130,7 +131,8 @@ def write_dict_to_df(  df, row, outs_recorded ):
 # ==========
 
 # ==========
-def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower ):
+def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
+            flag_WTnamespace=False ):
     """
     to save `03_DT_layout.py` results for use in further tower optimization
     
@@ -143,6 +145,9 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower ):
     """
     from wisdem.inputs import write_yaml
     
+    if flag_WTnamespace: prefix="drivese."
+    else: prefix=""
+
     rna_props = {}
     # ===== geometry options =====
     props_geo = rna_props["geometry_options"] = {}
@@ -151,51 +156,51 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower ):
 
     # ------ outer shape
     props_outer = props_DT["outer_shape"] = {}
-    props_outer["uptilt"] = prob["tilt"][0] # windio 2.x needs in deg
-    props_outer["distance_tt_hub"] = prob["drive_height"][0]
-    props_outer["distance_hub_mb"] = prob["L_h1"][0]
-    props_outer["distance_mb_mb"] = prob["L_12"][0]
-    props_outer["overhang"] = prob["overhang"][0]
+    props_outer["uptilt"] = prob[prefix+"tilt"][0] # windio 2.x needs in deg
+    props_outer["distance_tt_hub"] = prob[prefix+"drive_height"][0]
+    props_outer["distance_hub_mb"] = prob[prefix+"L_h1"][0]
+    props_outer["distance_mb_mb"] = prob[prefix+"L_12"][0]
+    props_outer["overhang"] = prob[prefix+"overhang"][0]
     # ------ gearbox
     props_gb = props_DT["gearbox"] = {}
-    props_gb["gear_ratio"] = prob["gear_ratio"][0]
-    props_gb["mass"] = prob["gearbox_mass_user"][0]
+    props_gb["gear_ratio"] = prob[prefix+"gear_ratio"][0]
+    props_gb["mass"] = prob[prefix+"gearbox_mass_user"][0]
     props_gb["efficiency"] = 0.992 # TODO: hard coded here
-    props_gb["length"] = prob["gearbox_length_user"][0]
-    props_gb["radius"] = prob["gearbox_radius_user"][0]
+    props_gb["length"] = prob[prefix+"gearbox_length_user"][0]
+    props_gb["radius"] = prob[prefix+"gearbox_radius_user"][0]
     # ------ lss
     props_lss = props_DT["lss"] = {}
-    props_lss["diameter"] = prob["lss_diameter"].tolist()
-    props_lss["wall_thickness"] = prob["lss_wall_thickness"].tolist()
-    props_lss["material"] = prob["lss_material"]
+    props_lss["diameter"] = prob[prefix+"lss_diameter"].tolist()
+    props_lss["wall_thickness"] = prob[prefix+"lss_wall_thickness"].tolist()
+    props_lss["material"] = prob[prefix+"lss_material"]
     # ------ hss
     props_hss = props_DT["hss"] = {}
-    props_hss["length"] = prob["L_hss"][0]
-    props_hss["diameter"] = prob["hss_diameter"].tolist()
-    props_hss["wall_thickness"] = prob["hss_wall_thickness"].tolist()
-    props_hss["material"] = prob["hss_material"]
+    props_hss["length"] = prob[prefix+"L_hss"][0]
+    props_hss["diameter"] = prob[prefix+"hss_diameter"].tolist()
+    props_hss["wall_thickness"] = prob[prefix+"hss_wall_thickness"].tolist()
+    props_hss["material"] = prob[prefix+"hss_material"]
     # ------ bedplate
     props_bed = props_DT["bedplate"] = {}
-    props_bed["flange_width"] = prob["bedplate_flange_width"][0]
-    props_bed["flange_thickness"] = prob["bedplate_flange_thickness"][0]
-    props_bed["web_thickness"] = prob["bedplate_web_thickness"][0]
-    props_bed["material"] = prob["bedplate_material"]
+    props_bed["flange_width"] = prob[prefix+"bedplate_flange_width"][0]
+    props_bed["flange_thickness"] = prob[prefix+"bedplate_flange_thickness"][0]
+    props_bed["web_thickness"] = prob[prefix+"bedplate_web_thickness"][0]
+    props_bed["material"] = prob[prefix+"bedplate_material"]
     # ------ other components
     props_other = props_DT["other_components"] = {}
-    props_other["mb1Type"] = prob["bear1.bearing_type"]
-    props_other["mb2Type"] = prob["bear2.bearing_type"]
-    props_other["mb1_e"] = prob["bear1.mb_e"][0]
-    props_other["mb2_e"] = prob["bear2.mb_e"][0]
-    props_other["uptower"] = bool(prob["uptower"]) # save uptower boolean as boolean not string
-    props_other["converter_mass"] = prob["converter_mass_user"][0]
+    props_other["mb1Type"] = prob[prefix+"bear1.bearing_type"]
+    props_other["mb2Type"] = prob[prefix+"bear2.bearing_type"]
+    props_other["mb1_e"] = prob[prefix+"bear1.mb_e"][0]
+    props_other["mb2_e"] = prob[prefix+"bear2.mb_e"][0]
+    props_other["uptower"] = bool(prob[prefix+"uptower"]) # save uptower boolean as boolean not string
+    props_other["converter_mass"] = prob[prefix+"converter_mass_user"][0]
     # ------ generator
     props_gen = props_DT["generator"] = {}
-    props_gen["mass"] = prob["generator_mass_user"][0]
-    props_gen["length"] = prob["L_generator"][0]
-    props_gen["radius"] = prob["generator_radius_user"][0]
+    props_gen["mass"] = prob[prefix+"generator_mass_user"][0]
+    props_gen["length"] = prob[prefix+"L_generator"][0]
+    props_gen["radius"] = prob[prefix+"generator_radius_user"][0]
     props_gen["rpm_efficiency"] = {
-        "grid": prob["generator_efficiency_user"][0,:].tolist(),
-        "values": prob["generator_efficiency_user"][1,:].tolist()
+        "grid": prob[prefix+"generator_efficiency_user"][0,:].tolist(),
+        "values": prob[prefix+"generator_efficiency_user"][1,:].tolist()
     }
 
     # ===== modeling options =====
@@ -206,17 +211,17 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower ):
     props_model["Loading"] = {}
 
     props_model["Loading"] = {
-        "mass": prob["rna_mass"][0],
-        "center_of_mass": prob["rna_cm"].tolist(),
-        "moment_of_inertia": prob["rna_I_TT"].tolist(), # convert to list for yaml
+        "mass": prob[prefix+"rna_mass"][0],
+        "center_of_mass": prob[prefix+"rna_cm"].tolist(),
+        "moment_of_inertia": prob[prefix+"rna_I_TT"].tolist(), # convert to list for yaml
     }
     rna_loads = props_model["Loading"]["loads"] = [{
         "force": [], # placeholder, will be filled with prob["base_F"]
         "moment": [], # placeholder, will be filled with prob["base_M"]
         "velocity": 11.0, # placeholder, will be filled with 11.0 m/s
     }]
-    rna_loads[0]["force"] = prob["base_F"][:,0].tolist()   # convert to list for yaml 
-    rna_loads[0]["moment"] = prob["base_M"][:,0].tolist()   # convert to list for yaml
+    rna_loads[0]["force"] = prob[prefix+"base_F"][:,0].tolist()   # convert to list for yaml 
+    rna_loads[0]["moment"] = prob[prefix+"base_M"][:,0].tolist()   # convert to list for yaml
 
     write_yaml(rna_props, loc_save_RNAprops4tower)
 # ==========
@@ -410,3 +415,31 @@ def plot_drivetrain_mass_comparison( prob, loc_save_img=None,
     if loc_save_img: plt.savefig( loc_save_img  )
     plt.show()
 # ==========
+#%%
+if __name__ == "__main__":
+    mydir = os.path.dirname(os.path.dirname(__file__))
+    dir_mainUser = os.path.dirname( os.path.dirname( os.path.dirname( mydir) ) )
+    dir_examples = os.path.join( dir_mainUser, "WISDEM","examples" )
+    
+    dir_DT_03results =  os.path.join( dir_examples,
+        "06_drivetrain","M4W_production_runs","03_results"
+    )
+    dir_WT_03results =  os.path.join( dir_examples,
+        "09_floating","M4W_03_DT_towerSemiSub","outputs"
+    )
+    # model csv files
+    file_DT = os.path.join(dir_DT_03results,"RNA_props_model_for_tower_m4w_flip.yaml")
+    file_WT = os.path.join(dir_WT_03results,"RNA_props_model_for_tower.yaml")
+    # parse
+    from plot_tower_data import parse_Loading_modelYAML2dict, plot_loads_TT_comparison
+    dict_DT = parse_Loading_modelYAML2dict(file_DT,flag_yamlFromDrivetrain=True)
+    dict_WT = parse_Loading_modelYAML2dict(file_WT,flag_yamlFromDrivetrain=True)
+    # loc_save_img
+    loc_save_img = dir_WT_03results +os.sep+ (
+            "compr_RNAprops_iea&m4w.pdf"
+        )
+    # plot
+    plot_loads_TT_comparison(dict_WT, dict_DT,
+        m4w_label='Integrated', iea_label='De-coupled',figsize=(8,6))
+    
+# %%
