@@ -140,7 +140,7 @@ def plot_tower_geo_comparison( m4w_yaml, iea15_yaml, only_tower=True,
 #%%
 # Run & plot
 if __name__ == "__main__":
-    mydir = os.path.dirname(os.path.realpath(__file__))
+    mydir = os.path.dirname(os.path.dirname(__file__))
     dirTowerEg = os.path.dirname(os.path.dirname(mydir))+(
         os.sep+"examples"+os.sep+"05_tower_monopile")
     dir_m4w_run = dirTowerEg + os.sep + "M4W_01_semisubTower_only"
@@ -158,10 +158,21 @@ if __name__ == "__main__":
 # ======================================================
 # 1. READ FUNCTION
 # ======================================================
-def parse_Loading_modelYAML2dict(yaml_file):
+def parse_Loading_modelYAML2dict(yaml_file, flag_yamlFromDrivetrain=False):
+    """
+    Inputs
+    _______
+    flag_yamlFromDrivetrain : Boolen 
+        if the `yaml_file` was created using the `utilities_drivetrain/write_yaml_of_drivetrain_properties.py` function,
+        originally from an input .csv file of the drivetrain or wind turbine,
+        then set this flag to `True`.
+    """
     data = sch.load_yaml( yaml_file )
 
-    loading = data['WISDEM']['Loading']
+    if flag_yamlFromDrivetrain: 
+        loading = data['modeling_options']['Loading']
+    else:
+        loading = data['WISDEM']['Loading']
 
     out = {}
 
@@ -189,14 +200,16 @@ def parse_Loading_modelYAML2dict(yaml_file):
 # ======================================================
 # 2. PLOTTING FUNCTION
 # ======================================================
-def plot_loads_TT_comparison(m4w, iea,
-                             loc_save_img=None, clrs=clrs_m4w):
+def plot_loads_TT_comparison(m4w_dict, iea_dict,
+        m4w_label='Made4Wind', iea_label='IEA 15MW',
+        clrs=clrs_m4w, loc_save_img=None, figsize=(12,8)
+        ):
 
-    labels = ['IEA 15MW', 'Made4Wind']
+    labels = [iea_label, m4w_label]
     colors = [ clrs['Light_Green'], clrs['Aqua'] ]
 
 
-    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    fig, axs = plt.subplots(2, 2, figsize=figsize)
 
     # --------------------------------------------------
     # (1) Mass
@@ -206,11 +219,11 @@ def plot_loads_TT_comparison(m4w, iea,
     categories = [r'$m_{RNA}$']
 
     m4w_vals = [
-        m4w['mass']/1e6,
+        m4w_dict['mass']/1e6,
     ]
 
     iea_vals = [
-        iea['mass']/1e6,
+        iea_dict['mass']/1e6,
     ]
 
     x = np.arange(len(categories))
@@ -270,8 +283,8 @@ def plot_loads_TT_comparison(m4w, iea,
         ]
 
     # use full MoI (not just first 3)
-    m4w_I = m4w['I_full'] / 1e6
-    iea_I = iea['I_full'] / 1e6
+    m4w_I = m4w_dict['I_full'] / 1e6
+    iea_I = iea_dict['I_full'] / 1e6
 
     x = np.arange(len(labels_I))
     width = 0.35
@@ -298,9 +311,9 @@ def plot_loads_TT_comparison(m4w, iea,
 
     x = np.arange(3)
 
-    ax.bar(x - width/2, iea['F']/1e6,
+    ax.bar(x - width/2, iea_dict['F']/1e6,
            width, color=colors[0])
-    ax.bar(x + width/2, m4w['F']/1e6,
+    ax.bar(x + width/2, m4w_dict['F']/1e6,
            width, color=colors[1])
 
     ax.set_xticks(x)
@@ -319,9 +332,9 @@ def plot_loads_TT_comparison(m4w, iea,
 
     x = np.arange(3)
 
-    ax.bar(x - width/2, iea['M']/1e6,
+    ax.bar(x - width/2, iea_dict['M']/1e6,
            width, color=colors[0])
-    ax.bar(x + width/2, m4w['M']/1e6,
+    ax.bar(x + width/2, m4w_dict['M']/1e6,
            width, color=colors[1])
 
     ax.set_xticks(x)
