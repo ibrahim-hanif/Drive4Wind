@@ -132,7 +132,7 @@ def write_dict_to_df(  df, row, outs_recorded ):
 
 # ==========
 def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
-            flag_WTnamespace=False ):
+            direct=False, flag_WTnamespace=False ):
     """
     to save `03_DT_layout.py` results for use in further tower optimization
     
@@ -165,10 +165,13 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
     # ------ gearbox
     props_gb = props_DT["gearbox"] = {}
     props_gb["gear_ratio"] = prob[prefix+"gear_ratio"][0]
-    props_gb["mass"] = prob[prefix+"gearbox_mass_user"][0]
-    props_gb["efficiency"] = 0.992 # TODO: hard coded here
-    props_gb["length"] = prob[prefix+"gearbox_length_user"][0]
-    props_gb["radius"] = prob[prefix+"gearbox_radius_user"][0]
+    if not direct:
+        props_gb["efficiency"] = 0.992 # TODO: hard coded here
+        props_gb["mass"] = prob[prefix+"gearbox_mass_user"][0]
+        props_gb["length"] = prob[prefix+"gearbox_length_user"][0]
+        props_gb["radius"] = prob[prefix+"gearbox_radius_user"][0]
+    else:
+        props_gb["efficiency"] = 1.0 # TODO: hard coded here
     # ------ lss
     props_lss = props_DT["lss"] = {}
     props_lss["diameter"] = prob[prefix+"lss_diameter"].tolist()
@@ -176,15 +179,24 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
     props_lss["material"] = prob[prefix+"lss_material"]
     # ------ hss
     props_hss = props_DT["hss"] = {}
-    props_hss["length"] = prob[prefix+"L_hss"][0]
-    props_hss["diameter"] = prob[prefix+"hss_diameter"].tolist()
-    props_hss["wall_thickness"] = prob[prefix+"hss_wall_thickness"].tolist()
-    props_hss["material"] = prob[prefix+"hss_material"]
+    if not direct:
+        props_hss["length"] = prob[prefix+"L_hss"][0]
+        props_hss["diameter"] = prob[prefix+"hss_diameter"].tolist()
+        props_hss["wall_thickness"] = prob[prefix+"hss_wall_thickness"].tolist()
+        props_hss["material"] = prob[prefix+"hss_material"]
+    else:
+    # ------ nose
+        props_nose = props_DT["nose"] = {}
+        props_nose["diameter"] = prob[prefix+"nose_diameter"]
+        props_nose["diameter"] = prob[prefix+"nose_wall_thickness"]
     # ------ bedplate
     props_bed = props_DT["bedplate"] = {}
-    props_bed["flange_width"] = prob[prefix+"bedplate_flange_width"][0]
-    props_bed["flange_thickness"] = prob[prefix+"bedplate_flange_thickness"][0]
-    props_bed["web_thickness"] = prob[prefix+"bedplate_web_thickness"][0]
+    if not direct:
+        props_bed["flange_width"] = prob[prefix+"bedplate_flange_width"][0]
+        props_bed["flange_thickness"] = prob[prefix+"bedplate_flange_thickness"][0]
+        props_bed["web_thickness"] = prob[prefix+"bedplate_web_thickness"][0]
+    else:
+        props_bed["wall_thickness"] = prob[prefix+"bedplate_wall_thickness"][0]
     props_bed["material"] = prob[prefix+"bedplate_material"]
     # ------ other components
     props_other = props_DT["other_components"] = {}
@@ -199,9 +211,10 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
     props_gen["mass"] = prob[prefix+"generator_mass_user"][0]
     props_gen["length"] = prob[prefix+"L_generator"][0]
     props_gen["radius"] = prob[prefix+"generator_radius_user"][0]
+    gen_eff = prob[prefix+"generator_efficiency"]
     props_gen["rpm_efficiency"] = {
-        "grid": prob[prefix+"generator_efficiency_user"][0,:].tolist(),
-        "values": prob[prefix+"generator_efficiency_user"][1,:].tolist()
+        "grid": "[0.0, 1.0]",
+        "values": np.array( [gen_eff[0], gen_eff[-1]] ).tolist()
     }
 
     # ===== modeling options =====
