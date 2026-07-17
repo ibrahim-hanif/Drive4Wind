@@ -167,9 +167,9 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
     props_gb["gear_ratio"] = prob[prefix+"gear_ratio"][0]
     if not direct:
         props_gb["efficiency"] = 0.992 # TODO: hard coded here
-        props_gb["mass"] = prob[prefix+"gearbox_mass_user"][0]
-        props_gb["length"] = prob[prefix+"gearbox_length_user"][0]
-        props_gb["radius"] = prob[prefix+"gearbox_radius_user"][0]
+        props_gb["mass"] = prob[prefix+"gearbox_mass"][0]
+        props_gb["length"] = prob[prefix+"L_gearbox"][0]
+        props_gb["radius"] = prob[prefix+"D_gearbox"][0]/2
     else:
         props_gb["efficiency"] = 1.0 # TODO: hard coded here
     # ------ lss
@@ -188,7 +188,7 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
     # ------ nose
         props_nose = props_DT["nose"] = {}
         props_nose["diameter"] = prob[prefix+"nose_diameter"]
-        props_nose["diameter"] = prob[prefix+"nose_wall_thickness"]
+        props_nose["wall_thickness"] = prob[prefix+"nose_wall_thickness"]
     # ------ bedplate
     props_bed = props_DT["bedplate"] = {}
     if not direct:
@@ -196,7 +196,11 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
         props_bed["flange_thickness"] = prob[prefix+"bedplate_flange_thickness"][0]
         props_bed["web_thickness"] = prob[prefix+"bedplate_web_thickness"][0]
     else:
-        props_bed["wall_thickness"] = prob[prefix+"bedplate_wall_thickness"][0]
+        bed_wt = prob[prefix+"bedplate_wall_thickness"]
+        props_bed["wall_thickness"] = {
+            "grid": "[0.0, 1.0]",
+            "values": np.array( [bed_wt[0], bed_wt[-1]] ).tolist()
+        }
     props_bed["material"] = prob[prefix+"bedplate_material"]
     # ------ other components
     props_other = props_DT["other_components"] = {}
@@ -205,12 +209,12 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
     props_other["mb1_e"] = prob[prefix+"bear1.mb_e"][0]
     props_other["mb2_e"] = prob[prefix+"bear2.mb_e"][0]
     props_other["uptower"] = bool(prob[prefix+"uptower"]) # save uptower boolean as boolean not string
-    props_other["converter_mass"] = prob[prefix+"converter_mass_user"][0]
+    props_other["converter_mass"] = prob[prefix+"converter_mass"][0]
     # ------ generator
     props_gen = props_DT["generator"] = {}
-    props_gen["mass"] = prob[prefix+"generator_mass_user"][0]
+    props_gen["mass"] = prob[prefix+"generator_mass"][0]
     props_gen["length"] = prob[prefix+"L_generator"][0]
-    props_gen["radius"] = prob[prefix+"generator_radius_user"][0]
+    props_gen["radius"] = prob[prefix+"R_generator"][0]
     gen_eff = prob[prefix+"generator_efficiency"]
     props_gen["rpm_efficiency"] = {
         "grid": "[0.0, 1.0]",
