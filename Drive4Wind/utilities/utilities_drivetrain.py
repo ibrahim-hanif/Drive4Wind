@@ -198,7 +198,7 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
     else:
         bed_wt = prob[prefix+"bedplate_wall_thickness"]
         props_bed["wall_thickness"] = {
-            "grid": "[0.0, 1.0]",
+            "grid": [0.0, 1.0],
             "values": np.array( [bed_wt[0], bed_wt[-1]] ).tolist()
         }
     props_bed["material"] = prob[prefix+"bedplate_material"]
@@ -217,7 +217,7 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
     props_gen["radius"] = prob[prefix+"R_generator"][0]
     gen_eff = prob[prefix+"generator_efficiency"]
     props_gen["rpm_efficiency"] = {
-        "grid": "[0.0, 1.0]",
+        "grid": [0.0, 1.0],
         "values": np.array( [gen_eff[0], gen_eff[-1]] ).tolist()
     }
 
