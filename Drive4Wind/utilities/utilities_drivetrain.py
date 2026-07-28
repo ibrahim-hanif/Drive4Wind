@@ -13,6 +13,7 @@ from Drive4Wind.post_processing.color_schemes import loc_clr_scheme_m4w, read_co
 clrs_m4w = read_color_scheme( loc_clr_scheme_m4w )
 
 from wisdem.commonse.fileIO import var_df2dict
+from wisdem.commonse.utilities import load_all_mat_to_dict, pdf_norm_int_using_cdf
 
 # ==========
 def read_df_to_prob( this_case, prob ):
@@ -474,3 +475,98 @@ if __name__ == "__main__":
         m4w_label='Integrated', iea_label='De-coupled',figsize=(8,6))
     
 # %%
+def parse_rotor_props_from_base_case_csv2dict( loc_csv ):
+    """
+    Prepare overrides dictionary for rotor system inputs to drivetrainSE
+    from saved base-case csv WT file
+    """
+    df_wt = pd.read_csv( loc_csv )
+    dict_wt = var_df2dict( df_wt )
+
+    overrides = {}
+    lst_props = [
+        # from rotorse or blade
+        "drivese.spinner_gust_ws",
+        "drivese.rated_rpm",
+        "drivese.rated_torque",
+        "drivese.pitch_system.BRFM",
+        "drivese.blade_root_diameter",
+        "drivese.blades_cm",
+        "drivese.blade_mass",
+        "drivese.blades_mass",
+        "drivese.blades_I",
+        # towerse
+        "drivese.D_top"
+    ]
+    for name in lst_props:
+        overrides[ name ] = eval( dict_wt[name] )
+    return overrides
+
+def define_modeling_options_dict_for_drivetrainSE( loc_all_loads_mat_file ):
+    """
+    Inputs
+    _______
+    loc_all_loads_mat_file : string
+        path location where hub loads are saved (as an .mat file)
+    
+    Outputs
+    _______
+    opts : dict
+        modeling options for drivetrain-related MDAO
+    """
+    # Load hub loads
+    S_all, keys_all = load_all_mat_to_dict(loc_all_loads_mat_file)
+    # - Wind speed and probabilies: auto parse loads dict
+    ws = S_all["mean_wind_speed"][0,:].tolist()
+    pdf_ws = pdf_norm_int_using_cdf(ws).tolist()
+    # ----
+
+    # ### Defining options (`modelling_options`), flags
+    opts = {}
+
+    opts["WISDEM"] = {}
+    opts["WISDEM"]["n_dlc"] = 1
+    opts["WISDEM"]["DriveSE"] = {}
+    # NOTE "hub": 'Hub_System' component are NOT included in the 'DrivetrainSE_M4W' component 
+    opts["WISDEM"]["DriveSE"]["hub"] = {}
+    opts["WISDEM"]["DriveSE"]["hub"]["hub_gamma"] = 2.0
+    opts["WISDEM"]["DriveSE"]["hub"]["spinner_gamma"] = 1.5
+
+    opts["WISDEM"]["DriveSE"]["direct"] = False
+    opts["WISDEM"]["DriveSE"]["gearbox_torque_density"] = 0.0
+
+    opts["WISDEM"]["DriveSE"]["gamma_f"] = 1.35 #IEC-1, 7.6.2.2a, pg.57
+    opts["WISDEM"]["DriveSE"]["gamma_m"] = 1.3  #IEC-1, 7.6.2.4, pg.59
+    opts["WISDEM"]["DriveSE"]["gamma_n"] = 1.0  #IEC-1, 7.6.1.3, pg.55
+    opts["WISDEM"]["DriveSE"]["nBins"] = 100    #used by (new) Analytical_FLS_Bearing_Life; =Number of bins for histogram MB FLS
+    opts["WISDEM"]["DriveSE"]["own_hub_loads"] = True
+    # used as: gamma = gamma_f * gamma_m * gamma_n (within TODO)
+
+    opts["WISDEM"]["RotorSE"] = {}
+    opts["WISDEM"]["RotorSE"]["n_pc"] = 2 #cf. RPM_Input in drive_components.py
+                # `n_pc`: Number of wind speeds to compute the power curve
+    opts["materials"] = {}
+    opts["materials"]["n_mat"] = 4
+
+    opts["flags"] = {}
+    dogen = opts["flags"]["generator"] = False
+    dohub = opts["flags"]["hub"] = False #(v)
+    doMBfls = opts["flags"]["mb_fls"] = True
+
+    opts["OpenFAST"] = {}
+    opts["OpenFAST"]["simulation"] = {}
+    opts["OpenFAST"]["simulation"]["DT"] = 0.05
+    # dir(ectory) where MS loads are stored .csv (?)
+    if loc_all_loads_mat_file:
+        opts["OpenFAST"]["openfast_dir"] = loc_all_loads_mat_file
+    else:
+        ValueError('Full loads not defined in openfast_dir<-OpenFAST<-modelling_options. Please define it first. jazakumAllahu khayr.')
+
+    opts["DLC_driver"] = {}
+    opts["DLC_driver"]["DLCs"] = [{}]
+    opts["DLC_driver"]["DLCs"][0]["DLC"] = "1.2"
+    opts["DLC_driver"]["DLCs"][0]["wind_speed"] = ws
+    opts["DLC_driver"]["DLCs"][0]["probabilities"] = pdf_ws
+    # TODO: probabs check with wind site
+
+    return opts
