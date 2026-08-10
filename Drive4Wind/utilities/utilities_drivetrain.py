@@ -308,7 +308,7 @@ def plot_drivetrain_mass_comparison(
         "Turret nose":      eval(dict_iea[prefix+"nose_mass"]) / 1e3,
         "Main bearings":    2.0*eval(dict_iea[prefix+"mean_bearing_mass"]) / 1e3,
         "Gearbox":          eval(dict_iea[prefix+"gearbox_mass"]) / 1e3,
-        "High-speed shaft": 0.0,
+        "High-speed shaft": eval(dict_iea[prefix+"hss_mass"]) / 1e3,
         "Brake":            eval(dict_iea[prefix+"brake_mass"]) / 1e3,
         "Generator":        eval(dict_iea[prefix+"generator_mass"]) / 1e3,
         "Converter":        eval(dict_iea[prefix+"converter_mass"]) / 1e3,
@@ -324,7 +324,7 @@ def plot_drivetrain_mass_comparison(
 
     mass_M4W = {
         "Main shaft":       eval(dict_m4w[prefix+"lss_mass"]) / 1e3,
-        "Turret nose":      0.0,
+        "Turret nose":      eval(dict_m4w[prefix+"nose_mass"]) / 1e3,
         "Main bearings":    2.0*eval(dict_m4w[prefix+"mean_bearing_mass"]) / 1e3,
         "Gearbox":          eval(dict_m4w[prefix+"gearbox_mass"]) / 1e3,
         "High-speed shaft": eval(dict_m4w[prefix+"hss_mass"]) / 1e3,
