@@ -14,3 +14,8 @@ def rmsError( yPred, yTrue ):
     "Root Mean Square Error"
     N = len(yTrue)
     return np.sqrt( np.sum((yPred-yTrue)**2)/N )
+
+def relError( yPred, yTrue ):
+    "Relative Percentage Error: preserves the sign of the error"
+    N = len(yTrue)
+    return np.sum( ( (yPred-yTrue) / yTrue )*1e2 )/N
