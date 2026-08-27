@@ -143,7 +143,9 @@ def plot_tower_geo_comparison( m4w_yaml, iea15_yaml, only_tower=True,
 # Run & plot
 if __name__ == "__main__":
     mydir = os.path.dirname(os.path.dirname(__file__))
-    dirTowerEg = os.path.dirname(os.path.dirname(mydir))+(
+    dir_wisdem = os.path.join( mydir, os.path.pardir, os.path.pardir,
+                              os.path.pardir, "WISDEM" )
+    dirTowerEg = dir_wisdem+(
         os.sep+"examples"+os.sep+"05_tower_monopile")
     dir_m4w_run = dirTowerEg + os.sep + "M4W_01_semisubTower_only"
     # Geometry YAML files
@@ -202,16 +204,50 @@ def parse_Loading_modelYAML2dict(yaml_file, flag_yamlFromDrivetrain=False):
 # ======================================================
 # 2. PLOTTING FUNCTION
 # ======================================================
-def plot_loads_TT_comparison(m4w_dict, iea_dict,
+def plot_loads_TT_comparison(
+        m4w_dict, iea_dict,
         m4w_label='Made4Wind', iea_label='IEA 15MW',
         clrs=clrs_m4w, loc_save_img=None, figsize=(12,8)
         ):
 
     labels = [iea_label, m4w_label]
-    colors = [ clrs['Light_Green'], clrs['Aqua'] ]
-
+    colors = [clrs['Light_Green'], clrs['Aqua']]
 
     fig, axs = plt.subplots(2, 2, figsize=figsize)
+
+    width = 0.35
+
+
+    # --------------------------------------------------
+    # Helper function for percentage labels
+    # --------------------------------------------------
+    def add_percentage_labels(ax, x, reference, comparison, offset):
+
+        for i, (ref, val) in enumerate(zip(reference, comparison)):
+
+            if ref != 0:
+                diff = (val - ref) / ref * 100
+            else:
+                diff = np.nan
+
+            # Position label above positive bars and below negative bars
+            if val >= 0:
+                y = val + offset
+                va = 'bottom'
+            else:
+                y = val - offset
+                va = 'top'
+
+            if np.isfinite(diff):
+                ax.text(
+                    x[i] + width/2,
+                    y,
+                    f'{diff:+.1f}%',
+                    ha='center',
+                    va=va,
+                    # fontsize=10
+                )
+
 
     # --------------------------------------------------
     # (1) Mass
@@ -220,59 +256,44 @@ def plot_loads_TT_comparison(m4w_dict, iea_dict,
 
     categories = [r'$m_{RNA}$']
 
-    m4w_vals = [
+    m4w_vals = np.array([
         m4w_dict['mass']/1e6,
-    ]
+    ])
 
-    iea_vals = [
+    iea_vals = np.array([
         iea_dict['mass']/1e6,
-    ]
+    ])
 
     x = np.arange(len(categories))
-    width = 0.35
 
-    ax.bar(x - width/2, iea_vals,
-        width, color=colors[0], label=labels[0])
-    ax.bar(x + width/2, m4w_vals,
-        width, color=colors[1], label=labels[1])
+    ax.bar(
+        x - width/2,
+        iea_vals,
+        width,
+        color=colors[0],
+        label=labels[0]
+    )
+
+    ax.bar(
+        x + width/2,
+        m4w_vals,
+        width,
+        color=colors[1],
+        label=labels[1]
+    )
+
+    # Percentage difference
+    add_percentage_labels(
+        ax, x, iea_vals, m4w_vals,
+        offset=0.02 * max(abs(m4w_vals))
+    )
 
     ax.set_xticks(x)
     ax.set_xticklabels(categories)
-    ax.set_ylabel( 'Mass '+r'$[10^3 ~t]$' )
+    ax.set_ylabel('Mass ' + r'$[10^3 ~t]$')
     ax.set_title('RNA Mass Comparison')
-    # ax.legend()
     ax.grid(True)
 
-
-    # --------------------------------------------------
-    # (2) Center of Mass (3D)
-    # = removed (TODO? iff needed or show on ppt drawing)
-    # = replaced with MoI comparison
-    # --------------------------------------------------
-    # from mpl_toolkits.mplot3d import Axes3D  # add at top of script
-
-    # fig.delaxes(axs[0, 1])  # remove 2D axis
-    # ax = fig.add_subplot(2, 2, 2, projection='3d')
-
-    # # Scatter points
-    # ax.scatter(*m4w['com'], label='M4W', s=80)
-    # ax.scatter(*iea['com'], label='IEA15MW', s=80)
-
-    # # Labels
-    # ax.set_xlabel('X [m]')
-    # ax.set_ylabel('Y [m]')
-    # ax.set_zlabel('Z [m]')
-    # ax.set_title('Center of Mass (3D)')
-
-    # # Optional: connect points (nice visual)
-    # ax.plot(
-    #     [m4w['com'][0], iea['com'][0]],
-    #     [m4w['com'][1], iea['com'][1]],
-    #     [m4w['com'][2], iea['com'][2]],
-    #     linestyle='--'
-    # )
-
-    # ax.legend()
 
     # --------------------------------------------------
     # (2) Full Moment of Inertia (6 components)
@@ -280,25 +301,44 @@ def plot_loads_TT_comparison(m4w_dict, iea_dict,
     ax = axs[0, 1]
 
     labels_I = [
-        r'$I_{xx}$', r'$I_{yy}$', r'$I_{zz}$',
-        r'$I_{xy}$', r'$I_{xz}$', r'$I_{yz}$'
-        ]
+        r'$I_{xx}$',
+        r'$I_{yy}$',
+        r'$I_{zz}$',
+        r'$I_{xy}$',
+        r'$I_{xz}$',
+        r'$I_{yz}$'
+    ]
 
-    # use full MoI (not just first 3)
-    m4w_I = m4w_dict['I_full'] / 1e6
-    iea_I = iea_dict['I_full'] / 1e6
+    m4w_I = np.asarray(m4w_dict['I_full']) / 1e6
+    iea_I = np.asarray(iea_dict['I_full']) / 1e6
 
     x = np.arange(len(labels_I))
-    width = 0.35
 
-    ax.bar(x - width/2, iea_I,
-           width, color=colors[0], label=labels[0])
-    ax.bar(x + width/2, m4w_I,
-           width, color=colors[1], label=labels[1])
+    ax.bar(
+        x - width/2,
+        iea_I,
+        width,
+        color=colors[0],
+        label=labels[0]
+    )
+
+    ax.bar(
+        x + width/2,
+        m4w_I,
+        width,
+        color=colors[1],
+        label=labels[1]
+    )
+
+    # Percentage difference
+    add_percentage_labels(
+        ax, x, iea_I, m4w_I,
+        offset=0.02 * max(abs(m4w_I))
+    )
 
     ax.set_xticks(x)
     ax.set_xticklabels(labels_I)
-    ax.set_ylabel('MoI '+r'$[10^6 ~kg \cdot m^2]$')
+    ax.set_ylabel('MoI ' + r'$[10^6 ~kg \cdot m^2]$')
     ax.set_title('Full Inertia Tensor Comparison')
     ax.legend()
     ax.grid(True)
@@ -309,18 +349,40 @@ def plot_loads_TT_comparison(m4w_dict, iea_dict,
     # --------------------------------------------------
     ax = axs[1, 0]
 
-    labels_F = [r'$F_x$', r'$F_y$', r'$F_z$']
+    labels_F = [
+        r'$F_x$',
+        r'$F_y$',
+        r'$F_z$'
+    ]
 
     x = np.arange(3)
 
-    ax.bar(x - width/2, iea_dict['F']/1e6,
-           width, color=colors[0])
-    ax.bar(x + width/2, m4w_dict['F']/1e6,
-           width, color=colors[1])
+    iea_F = np.asarray(iea_dict['F']) / 1e6
+    m4w_F = np.asarray(m4w_dict['F']) / 1e6
+
+    ax.bar(
+        x - width/2,
+        iea_F,
+        width,
+        color=colors[0]
+    )
+
+    ax.bar(
+        x + width/2,
+        m4w_F,
+        width,
+        color=colors[1]
+    )
+
+    # Percentage difference
+    add_percentage_labels(
+        ax, x, iea_F, m4w_F,
+        offset=0.02 * max(abs(m4w_F))
+    )
 
     ax.set_xticks(x)
     ax.set_xticklabels(labels_F)
-    ax.set_ylabel('Force '+r'$[MN]$')
+    ax.set_ylabel('Force ' + r'$[MN]$')
     ax.set_title('Forces Comparison')
     ax.grid(True)
 
@@ -330,24 +392,52 @@ def plot_loads_TT_comparison(m4w_dict, iea_dict,
     # --------------------------------------------------
     ax = axs[1, 1]
 
-    labels_M = [r'$M_x$', r'$M_y$', r'$M_z$']
+    labels_M = [
+        r'$M_x$',
+        r'$M_y$',
+        r'$M_z$'
+    ]
 
     x = np.arange(3)
 
-    ax.bar(x - width/2, iea_dict['M']/1e6,
-           width, color=colors[0])
-    ax.bar(x + width/2, m4w_dict['M']/1e6,
-           width, color=colors[1])
+    iea_M = np.asarray(iea_dict['M']) / 1e6
+    m4w_M = np.asarray(m4w_dict['M']) / 1e6
+
+    ax.bar(
+        x - width/2,
+        iea_M,
+        width,
+        color=colors[0]
+    )
+
+    ax.bar(
+        x + width/2,
+        m4w_M,
+        width,
+        color=colors[1]
+    )
+
+    # Percentage difference
+    add_percentage_labels(
+        ax, x, iea_M, m4w_M,
+        offset=0.02 * max(abs(m4w_M))
+    )
 
     ax.set_xticks(x)
     ax.set_xticklabels(labels_M)
-    ax.set_ylabel('Moment '+r'$[MNm]$')
+    ax.set_ylabel('Moment ' + r'$[MNm]$')
     ax.set_title('Moments Comparison')
     ax.grid(True)
 
 
+    # --------------------------------------------------
+    # Final formatting
+    # --------------------------------------------------
     plt.tight_layout()
-    if loc_save_img: plt.savefig(loc_save_img)
+
+    if loc_save_img:
+        plt.savefig(loc_save_img, bbox_inches='tight')
+
     plt.show()
 
 #%%
@@ -383,32 +473,63 @@ def get_towerBaseLoads_from_csv( loc_csv ):
 
 #%%
 def plot_compr_towerBaseLoads_from_dict( m4w_dict, iea_dict,
-            m4w_label="Made4Wind", iea_label="IEA 15MW", figsize=(12,8),
-            clrs=clrs_m4w, loc_save_img=None ):
-      
+        m4w_label="Made4Wind", iea_label="IEA 15MW", figsize=(12,8),
+        clrs=clrs_m4w, loc_save_img=None ):
+
     colors = [ clrs['Light_Green'], clrs['Aqua'] ]
 
-    fig, axs = plt.subplots(1,2,figsize=figsize)
-    plt.suptitle("Tower-base loads comparison")
+    fig, axs = plt.subplots(1,2, figsize=figsize)
+    plt.suptitle("Tower-base loads comparison",y=0.9)
 
-    x = np.arange(3)
     width = 0.35
+
     # --------------------------------------------------
     # (3) Forces
     # --------------------------------------------------
     ax = axs[0]
+
     labels_F = [r'$F_x$', r'$F_y$', r'$F_z$']
     x = np.arange(3)
 
-    ax.bar(x - width/2, iea_dict['F']/1e6,
-                width, color=colors[0], label=iea_label)
-    ax.bar(x + width/2, m4w_dict['F']/1e6,
-                width, color=colors[1], label=m4w_label)
+    iea_F = iea_dict['F'] / 1e6
+    m4w_F = m4w_dict['F'] / 1e6
+
+    ax.bar(
+        x - width/2, iea_F,
+        width,
+        color=colors[0],
+        label=iea_label
+    )
+
+    ax.bar(
+        x + width/2, m4w_F,
+        width,
+        color=colors[1],
+        label=m4w_label
+    )
+
+    # Percentage difference: (second - first) / first
+    diff_F = (m4w_F - iea_F) / iea_F * 100
+
+    # Add percentage labels on second bar
+    for i, (value, diff) in enumerate(zip(m4w_F, diff_F)):
+
+        # Offset above/below bar depending on sign
+        offset = 0.3 if value >= 0 else -0.3
+        va = 'bottom' if value >= 0 else 'top'
+
+        ax.text(
+            x[i] + width/2,
+            value + offset,
+            f'{diff:+.0f}%',
+            ha='center',
+            va=va,
+            # fontsize=12
+        )
 
     ax.set_xticks(x)
     ax.set_xticklabels(labels_F)
-    ax.set_ylabel('Force '+r'$[MN]$')
-    # ax.set_title('Forces Comparison')
+    ax.set_ylabel('Force ' + r'$[MN]$')
     ax.legend()
     ax.grid(True)
 
@@ -416,20 +537,52 @@ def plot_compr_towerBaseLoads_from_dict( m4w_dict, iea_dict,
     # (4) Moments
     # --------------------------------------------------
     ax = axs[1]
+
     labels_M = [r'$M_x$', r'$M_y$', r'$M_z$']
     x = np.arange(3)
 
-    ax.bar(x - width/2, iea_dict['M']/1e6,
-        width, color=colors[0])
-    ax.bar(x + width/2, m4w_dict['M']/1e6,
-        width, color=colors[1])
+    iea_M = iea_dict['M'] / 1e6
+    m4w_M = m4w_dict['M'] / 1e6
+
+    ax.bar(
+        x - width/2, iea_M,
+        width,
+        color=colors[0]
+    )
+
+    ax.bar(
+        x + width/2, m4w_M,
+        width,
+        color=colors[1]
+    )
+
+    # Percentage difference
+    diff_M = (m4w_M - iea_M) / iea_M * 100
+
+    # Add percentage labels on second bar
+    for i, (value, diff) in enumerate(zip(m4w_M, diff_M)):
+
+        offset = 10 if value >= 0 else -10
+        va = 'bottom' if value >= 0 else 'top'
+
+        ax.text(
+            x[i] + width/2,
+            value + offset,
+            f'{diff:+.0f}%',
+            ha='center',
+            va=va,
+            # fontsize=12
+        )
 
     ax.set_xticks(x)
     ax.set_xticklabels(labels_M)
-    ax.set_ylabel('Moment '+r'$[MNm]$')
-    # ax.set_title('Moments Comparison')
+    ax.set_ylabel('Moment ' + r'$[MNm]$')
     ax.grid(True)
 
     plt.tight_layout()
-    if loc_save_img: plt.savefig(loc_save_img)
+
+    if loc_save_img:
+        plt.savefig(loc_save_img)
+
     plt.show()
+# %%
