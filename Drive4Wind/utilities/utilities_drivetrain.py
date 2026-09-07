@@ -737,3 +737,7 @@ def plot_drivetrain_constraints(
         )
 
     plt.show()
+
+    return fig, axs
+
+#%%
