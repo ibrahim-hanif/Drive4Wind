@@ -18,7 +18,7 @@ A Python package for main bearing design, analysis, and multi-disciplinary optim
 
 ### Prerequisites
 
-**Drive4Wind is a WISDEM/WEIS plugin.** It assumes you already have WISDEM installed with its complete scientific stack.
+**`Drive4Wind` is a `WISDEM/WEIS` plugin.** It assumes you already have `WISDEM` installed with its complete scientific stack.
 
 ```bash
 # Ensure WISDEM/WEIS is installed first
@@ -28,7 +28,7 @@ pip install wisdem
 
 ### Install Drive4Wind
 
-Since Drive4Wind has **no enforced dependencies** (it relies on WISDEM's stack), installation is lightweight:
+Since `Drive4Wind` has **no enforced dependencies** (it relies on `WISDEM`'s stack), installation is lightweight:
 
 ```bash
 # From public GitHub repo
@@ -40,7 +40,7 @@ cd Drive4Wind
 pip install -e .
 ```
 
-**That's it!** No venv corruption, no dependency conflicts.
+**That's it!** No `venv` corruption, no dependency conflicts.
 
 ### Development Setup
 
@@ -57,18 +57,18 @@ python -m Drive4Wind.utils
 
 ## Requirements
 
-Drive4Wind is a plugin module that **assumes** the WISDEM/WEIS environment provides these packages. Version requirements are documented but not enforced at install time:
+`Drive4Wind` is a plugin module that **assumes** the `WISDEM/WEIS` environment provides these packages. Version requirements are documented but not enforced at install time:
 
-### Required (provided by WISDEM)
-- Python >= 3.9
-- numpy >= 1.20.0
-- scipy >= 1.7.0
-- openmdao >= 3.0.0
-- matplotlib >= 3.0.0
+### Required (provided by `WISDEM`)
+- `Python` >= 3.9
+- `numpy` >= 1.20.0
+- `scipy` >= 1.7.0
+- `openmdao` >= 3.0.0
+- `matplotlib` >= 3.0.0
 
 ### Optional (for advanced optimization)
-- nlopt >= 2.7.0
-- pyoptsparse >= 2.0.0
+- `nlopt` >= 2.7.0
+- `pyoptsparse` >= 2.0.0
 
 ### Version Validation
 
@@ -81,7 +81,7 @@ from Drive4Wind.utils import validate_environment
 validate_environment(verbose=True)
 ```
 
-This validation is optional and useful for debugging, but Drive4Wind does not enforce it at import time.
+This validation is optional and useful for debugging, but `Drive4Wind` does not enforce it at import time.
 
 ## Usage
 
@@ -111,7 +111,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Citation
 
-If you use Drive4Wind in your research, please cite it as:
+If you use `Drive4Wind` in your research, please cite it as:
 
 ```
 Gupta, V. (2026). Drive4Wind: Drivetrain design, analysis and optimization for floating offshore wind turbines. 
