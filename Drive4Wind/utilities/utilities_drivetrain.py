@@ -14,7 +14,11 @@ import ast
 from Drive4Wind.post_processing.color_schemes import loc_clr_scheme_m4w, read_color_scheme
 clrs_m4w = read_color_scheme( loc_clr_scheme_m4w )
 
-from wisdem.commonse.fileIO import var_df2dict
+try:
+    from wisdem.commonse.fileIO import var_df2dict
+except ImportError:
+    def var_df2dict( df ):
+        return dict( zip(df['variables'], df['values']) )
 # from wisdem.commonse.utilities import load_all_mat_to_dict, pdf_norm_int_using_cdf
 from windIO.yaml import load_yaml, write_yaml
 
