@@ -10,8 +10,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
+import ast
 import wisdem.inputs as sch
-from wisdem.commonse.fileIO import var_df2dict
+
+try:
+    from wisdem.commonse.fileIO import var_df2dict
+except ImportError:
+    def var_df2dict( df ):
+        return dict( zip(df['variables'], df['values']) )
+
 from Drive4Wind.post_processing.color_schemes import loc_clr_scheme_m4w, read_color_scheme
 
 clrs_m4w = read_color_scheme( loc_clr_scheme_m4w )
@@ -586,3 +593,63 @@ def plot_compr_towerBaseLoads_from_dict( m4w_dict, iea_dict,
 
     plt.show()
 # %%
+def plot_tower_constraints_stress_utils(
+        csv_path,
+        figsize=(5.0, 5.0),
+        colors = [
+            clrs_m4w['Aqua'],
+            clrs_m4w['Red'],
+            clrs_m4w['Dark_Green']
+        ],
+        markers=[ '.' ]*3,
+        flag_yticks_from_tower_z=False,
+        flag_WTnamespace=True,
+):
+
+    if flag_WTnamespace: prefix = "towerse."
+    else: prefix = ""
+
+    df = pd.read_csv(csv_path)
+    dict_vals = var_df2dict( df )
+    def dict2val( var ):
+        val = dict_vals[var]
+        arr = np.asarray(
+            ast.literal_eval(val),
+            dtype=float
+        ).flatten()
+        return arr
+
+    z = 0.5 * (
+        dict2val(prefix+"z_full")[:-1] + dict2val(prefix+"z_full")[1:]
+    )
+
+    stress = dict2val(prefix+"post.constr_stress")
+    shellBuckle = dict2val(prefix+"post.constr_shell_buckling")
+    globalBuckle = dict2val(prefix+"post.constr_global_buckling")
+
+    fig, ax = plt.subplots(1,1,figsize=figsize)
+
+    ax.plot(stress, z, label="von-Mises stress",
+            color=colors[0], marker=markers[0],
+    )
+    #     plt.plot(stress[:, 1], z, label="stress 2")
+    ax.plot(shellBuckle, z, label="Shell buckling",
+            color=colors[1], marker=markers[1],
+    )
+    #     plt.plot(shellBuckle[:, 1], z, label="shell buckling 2")
+    ax.plot(globalBuckle, z, label="Global buckling",
+            color=colors[2], marker=markers[2],
+    )
+    #     plt.plot(globalBuckle[:, 1], z, label="global buckling 2")
+    ax.axvline(
+        1.0, label='1.0 limit',
+        color='k', linestyle='--', linewidth=1.2,
+    )
+    ax.legend(bbox_to_anchor=(1.05, 1.0), loc=2)
+    ax.set_xlabel("Stress utilization")
+    ax.set_ylabel("Height along tower [m]")
+    if flag_yticks_from_tower_z: ax.set_yticks( np.linspace(z[0],z[-1],11) )
+
+    plt.tight_layout()
+
+    return fig, ax
