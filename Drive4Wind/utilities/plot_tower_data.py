@@ -57,9 +57,29 @@ def parse_bowt_data_from_yaml( yaml_file, towerORmonopile='tower' ):
 
     return z, d, t_mm
 
+# =====================================================================
 def plot_tower_geo_comparison( m4w_yaml, iea15_yaml, only_tower=True,
                               m4w_label='Made4Wind', iea_label='IEA 15MW',
-                              loc_save_img=None, clrs=clrs_m4w ):
+                              colors=[
+                                  clrs_m4w['Light_Turquoise'],
+                                  clrs_m4w['Aqua'],
+                                  clrs_m4w['Dark_Green'],
+                                #   clrs_m4w['Dark_Blue'],
+                                #   clrs_m4w['Dark_Red']
+                                  ] 
+):
+
+    # ============================================================
+    # Colors
+    # ============================================================
+    if only_tower: n_clrs = 3
+    else: n_clrs = 5
+
+    if (colors is None) or (len( colors ) != n_clrs):
+        cmap = plt.get_cmap("tab10")
+        colors = [ cmap(i % 10) for i in range(n_clrs) ]
+
+    
     # ========================
     # Load YAMLs
     # ========================
@@ -90,18 +110,6 @@ def plot_tower_geo_comparison( m4w_yaml, iea15_yaml, only_tower=True,
         t_iea = np.hstack( (t_iea_mp, t_iea) )
 
     # ========================
-    # Update plot settings
-    # ========================
-    plot_rcParams_update = {
-        "font.size": 16,
-        "axes.labelsize": 16,
-        "legend.fontsize": 16, # 16 for pdf of `var_with_iter` plot
-        "lines.linewidth": 3,
-        "lines.markersize": 6,
-    }
-    plt.rcParams.update( plot_rcParams_update )
-
-    # ========================
     # Plot
     # ========================
     if only_tower: figsize = (10,6)
@@ -109,10 +117,10 @@ def plot_tower_geo_comparison( m4w_yaml, iea15_yaml, only_tower=True,
     fig, axs = plt.subplots(1, 2, figsize=figsize, sharey=True)
 
     for ax in axs:
-        ax.axhline(transition, linestyle='--',color=clrs['Dark_Green'])
-        if not only_tower:
-            ax.axhline(waterline, linestyle='--',color=clrs['Dark_Blue'])
-            ax.axhline(mudline, linestyle='--',color=clrs['Dark_Red'])
+        ax.axhline(transition, linestyle='--',color=colors[2])
+        if not only_tower: # plot monopile
+            ax.axhline(waterline, linestyle='--',color=colors[3])
+            ax.axhline(mudline, linestyle='--',color=colors[4])
 
     # Labels only once (left plot)
     axs[0].text(d_iea.min(), transition + 2, 'Tower transition')
@@ -122,9 +130,9 @@ def plot_tower_geo_comparison( m4w_yaml, iea15_yaml, only_tower=True,
 
     # ---- Outer Diameter ----
     axs[0].plot(d_iea, z_iea,
-        label=iea_label, color=clrs['Light_Turquoise'], linewidth=2)
+        label=iea_label, color=colors[0], linewidth=2)
     axs[0].plot(d_m4w, z_m4w,
-        label=m4w_label, color=clrs['Aqua'], linewidth=2)
+        label=m4w_label, color=colors[1], linewidth=2)
     axs[0].set_xlabel('Outer Diameter [m]')
     axs[0].set_yticks( z_iea )
     axs[0].set_ylabel('Tower Height [m]')
@@ -133,17 +141,17 @@ def plot_tower_geo_comparison( m4w_yaml, iea15_yaml, only_tower=True,
     # ---- Thickness (step plot) ----
     # NOTE: 'mid'=avg. btw x-pos (thickness) <- consistent with internal wisdem tower vector
     axs[1].step(t_iea, z_iea,
-        where='mid', color=clrs['Light_Turquoise'], linewidth=2)
+        where='mid', color=colors[0], linewidth=2)
     axs[1].step(t_m4w, z_m4w,
-        where='mid', color=clrs['Aqua'], linewidth=2)
+        where='mid', color=colors[1], linewidth=2)
     axs[1].set_xlabel('Wall Thickness [mm]')
     axs[1].grid(True)
 
     axs[0].legend(loc='upper right')
     
     plt.tight_layout()
-    if loc_save_img: plt.savefig(loc_save_img)
-    plt.show()
+
+    return fig, axs
 # ========================
 
 #%%
