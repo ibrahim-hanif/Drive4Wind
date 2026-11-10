@@ -2,7 +2,7 @@
 
 **An open toolbox for fatigue-reliability-aware design and optimization of geared wind turbine drivetrains**
 
-result of the EU project Made4Wind
+result of the EU project Made4Wind, open-source to contribute to increased transparency, availability and/or reuse of research.
 
 A Python package for main bearing design, analysis, and multi-disciplinary optimization of drivetrains in large floating offshore wind turbines.
 
