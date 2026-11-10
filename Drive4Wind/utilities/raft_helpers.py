@@ -1519,3 +1519,388 @@ def plot_frequency_placement_with_metocean(
     fig.tight_layout()
 
     return fig, ax, rbm_periods, tower_periods
+
+#%%[markdown]
+# ### Plot changes in stats (dynamics) of variables with wind speed
+#%%
+def plot_comparison_windspeed_series_from_csv(
+        csv_path,
+        lst_vars,
+        wind_speeds=None,
+        index_start_end=(),
+        name_col="name",
+        design_labels=None,
+        colors=None,
+        diff_colors=None,
+        markers=None,
+        figsize=None,
+        reference_index=0,
+        title="Wind-Speed Response Comparison"):
+
+    df = pd.read_csv(csv_path)
+
+    n_designs = len(df)
+    nvars = len(lst_vars)
+
+    if n_designs < 1:
+        raise ValueError("CSV contains no design rows.")
+
+    if nvars < 1:
+        raise ValueError("lst_vars contains no variables.")
+
+    if not 0 <= reference_index < n_designs:
+        raise ValueError(
+            f"reference_index={reference_index} is invalid "
+            f"for {n_designs} designs."
+        )
+
+    # ========================================================
+    # Check variables
+    # ========================================================
+
+    missing_vars = [
+        var
+        for var, _, _ in lst_vars
+        if var not in df.columns
+    ]
+
+    if missing_vars:
+        raise KeyError(
+            "Variables missing from CSV:\n"
+            + "\n".join(missing_vars)
+        )
+
+    # ========================================================
+    # Design labels
+    # ========================================================
+
+    if design_labels is None:
+
+        if name_col in df.columns:
+            design_labels = (
+                df[name_col]
+                .astype(str)
+                .tolist()
+            )
+
+        else:
+            design_labels = [
+                f"Design {i + 1}"
+                for i in range(n_designs)
+            ]
+
+    if len(design_labels) != n_designs:
+        raise ValueError(
+            "Number of design_labels must equal "
+            "number of CSV rows/designs."
+        )
+
+    # ========================================================
+    # Colors
+    # ========================================================
+
+    if colors is None:
+
+        cmap = plt.get_cmap("tab10")
+
+        colors = [
+            cmap(i % 10)
+            for i in range(n_designs)
+        ]
+
+    elif len(colors) < n_designs:
+
+        raise ValueError(
+            f"{n_designs} designs found but only "
+            f"{len(colors)} colors supplied."
+        )
+
+    # Use same colors on difference plots by default
+    if diff_colors is None:
+        diff_colors = colors
+
+    # ========
+    # Markers
+    # ========
+    if markers is None: markers = ["o"] * n_designs
+
+    # ========================================================
+    # Helper: parse array from CSV
+    # ========================================================
+
+    def parse_array(value):
+
+        arr = np.asarray(
+            ast.literal_eval(str(value)),
+            dtype=float
+        )
+
+        return arr.squeeze().flatten()
+
+    # ========================================================
+    # Determine array slice
+    # ========================================================
+
+    if len(index_start_end) == 0:
+
+        i_start = 0
+        i_end = len(wind_speeds)
+
+    elif len(index_start_end) == 2:
+
+        i_start = index_start_end[0]
+        i_end = index_start_end[1]
+
+    else:
+
+        raise ValueError(
+            "index_start_end must be empty or "
+            "(start_index, end_index)."
+        )
+
+    # ========================================================
+    # Figure
+    #
+    # left  = actual values
+    # right = percentage difference
+    # ========================================================
+
+    if figsize is None:
+        figsize = (
+            16,
+            4 * nvars
+        )
+
+    fig, axs = plt.subplots(
+        nvars,
+        2,
+        figsize=figsize,
+        squeeze=False
+    )
+
+    all_values = {}
+    all_differences = {}
+
+    # ========================================================
+    # Plot each variable
+    # ========================================================
+
+    for j, (var, label, unit) in enumerate(lst_vars):
+
+        ax_val = axs[j, 0]
+        ax_diff = axs[j, 1]
+
+        # ----------------------------------------------------
+        # Extract values for every design
+        # ----------------------------------------------------
+
+        arrays = [
+            parse_array(
+                df.iloc[i][var]
+            )[i_start:i_end]
+            for i in range(n_designs)
+        ]
+
+        lengths = [
+            len(arr)
+            for arr in arrays
+        ]
+
+        if len(set(lengths)) != 1:
+
+            raise ValueError(
+                f"Different array lengths found for "
+                f"'{var}': {lengths}"
+            )
+
+        n = lengths[0]
+
+        values = np.vstack(arrays)
+
+        all_values[var] = values
+
+        # ----------------------------------------------------
+        # Wind-speed x-axis
+        # ----------------------------------------------------
+
+        if wind_speeds is None:
+
+            x = np.arange(n)
+
+        else:
+
+            if len(wind_speeds) != n:
+
+                raise ValueError(
+                    f"{var}: array length={n}, "
+                    f"but len(wind_speeds)="
+                    f"{len(wind_speeds)}."
+                )
+
+            x = np.asarray(
+                wind_speeds,
+                dtype=float
+            )
+
+        # ----------------------------------------------------
+        # Percentage differences
+        #
+        # Everything relative to reference design
+        # ----------------------------------------------------
+
+        ref_values = values[reference_index]
+
+        with np.errstate(
+                divide="ignore",
+                invalid="ignore"):
+
+            differences = (
+                (values - ref_values)
+                / ref_values
+                * 100.0
+            )
+
+        differences[reference_index, :] = 0.0
+
+        all_differences[var] = differences
+
+        # ====================================================
+        # LEFT: actual values
+        # ====================================================
+
+        for i in range(n_designs):
+
+            ax_val.plot(
+                x,
+                values[i],
+                # linewidth=2,
+                color=colors[i],
+                label=design_labels[i],
+                marker=markers[i],
+            )
+
+        ax_val.set_title(label)
+
+        ax_val.set_ylabel(unit)
+
+        ax_val.set_xticks(x)
+
+        ax_val.grid(
+            True,
+            alpha=0.3
+        )
+
+        ax_val.set_axisbelow(True)
+
+        # ====================================================
+        # RIGHT: percentage differences
+        # ====================================================
+
+        for i in range(n_designs):
+
+            # Reference is identically zero,
+            # so don't plot another line over y=0
+            if i == reference_index:
+                continue
+
+            ax_diff.plot(
+                x,
+                differences[i],
+                # linewidth=2,
+                color=diff_colors[i],
+                marker=markers[i],
+                label=design_labels[i]
+            )
+
+        ax_diff.axhline(
+            0.0,
+            color="black",
+            linestyle="--",
+            # linewidth=1
+        )
+
+        ax_diff.set_title(
+            f"{label}: % Difference"
+        )
+
+        ax_diff.set_ylabel("[%]")
+
+        ax_diff.set_xticks(x)
+
+        ax_diff.grid(
+            True,
+            alpha=0.3
+        )
+
+        ax_diff.set_axisbelow(True)
+
+        # ----------------------------------------------------
+        # Symmetric difference axis around zero
+        # ----------------------------------------------------
+
+        non_ref_diff = np.delete(
+            differences,
+            reference_index,
+            axis=0
+        )
+
+        finite_diff = non_ref_diff[
+            np.isfinite(non_ref_diff)
+        ]
+
+        if finite_diff.size > 0:
+
+            ymax = np.max(
+                np.abs(finite_diff)
+            )
+
+            if ymax > 0:
+
+                ax_diff.set_ylim(
+                    -1.15 * ymax,
+                    1.15 * ymax
+                )
+
+    # ========================================================
+    # X labels
+    # ========================================================
+
+    axs[-1, 0].set_xlabel(
+        "Wind Speed [m/s]"
+    )
+
+    axs[-1, 1].set_xlabel(
+        "Wind Speed [m/s]"
+    )
+
+    # ========================================================
+    # Shared figure-level legend
+    # ========================================================
+
+    handles, labels = axs[0, 0].get_legend_handles_labels()
+
+    fig.legend(
+        handles,
+        labels,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.94),
+        ncol=n_designs,
+        frameon=True,
+        fancybox=True
+    )
+
+    # ========================================================
+    # Figure title
+    # ========================================================
+
+    if title is not None:
+        fig.suptitle( title, y=0.995 )
+        
+    fig.tight_layout( rect=[0.0, 0.0, 1.0, 0.95] )
+
+    return (
+        fig,
+        axs,
+        all_values,
+        all_differences
+    )
