@@ -1202,3 +1202,320 @@ def plot_comparison_bar_plot_of_1Darray_from_csv(
         all_values,
         all_differences
     )
+#%%[markdown]
+# ### Plot spectra of excitation (1P, 3P), RBMs, tower bending modes (1.,2.)
+#%%
+from Drive4Wind.utilities.spectrums import spectrum_jonswap, spectrum_kaimal
+#%%
+def plot_frequency_placement_with_metocean(
+        csv_path,
+        modeling_options_yaml,
+        hub_height,
+        rpm_min,
+        rpm_rated,
+        design_labels,
+        colors,
+        markers,
+        figsize=(16, 6),
+        title="Wind, Wave, Excitation and Structural Frequency Comparison",
+        wind_speed_indices=None):
+    
+    import yaml
+    from matplotlib.patches import Patch
+    from matplotlib.lines import Line2D
+
+    # ==================================================
+    # Load CSV and metocean data
+    # ==================================================
+
+    df = pd.read_csv(csv_path)
+
+    with open(modeling_options_yaml, "r") as fp:
+        modeling_options = yaml.safe_load(fp)
+
+    metocean = modeling_options["DLC_driver"]["metocean_conditions"]
+
+    wind_speeds = np.asarray(metocean["wind_speed"], dtype=float)
+    Hs_all = np.asarray(metocean["wave_height_NSS"], dtype=float)
+    Tp_all = np.asarray(metocean["wave_period_NSS"], dtype=float)
+
+    if wind_speed_indices is None:
+        wind_speed_indices = [0, 4, 8, len(wind_speeds) - 1]
+
+    # ==================================================
+    # Frequency grid [Hz]
+    # ==================================================
+
+    f = np.linspace(0.001, 0.7, 200)
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # ==================================================
+    # Wave spectra (selected metocean conditions)
+    # ==================================================
+
+    clr_wave_spec = "aqua"
+
+    for idx in wind_speed_indices:
+        Hs, Tp = Hs_all[idx], Tp_all[idx]
+
+        S = spectrum_jonswap(f, Hs, Tp, gamma=None)
+        S /= max(np.max(S), np.finfo(float).eps)
+
+        ax.plot(
+            f, S,
+            color=clr_wave_spec,
+            alpha=0.7,
+            label=f"Wave: Hs={Hs:.1f} m, Tp={Tp:.1f} s"
+        )
+
+    # ==================================================
+    # Wind spectra
+    # ==================================================
+
+    clr_wind_spec = "blue"
+
+    for idx in wind_speed_indices:
+        U = wind_speeds[idx]
+
+        S = spectrum_kaimal(f, U, Hhub=hub_height)
+        S /= max(np.max(S), np.finfo(float).eps)
+
+        ax.plot(
+            f, S,
+            color=clr_wind_spec,
+            alpha=0.7,
+            label=f"Wind: U={U:.0f} m/s"
+        )
+
+    # ==================================================
+    # 1P / 3P frequency bands [Hz]
+    # ==================================================
+
+    f_1P = np.sort(np.array([rpm_min, rpm_rated], dtype=float) / 60.0)
+    f_3P = 3.0 * f_1P
+
+    margin_1P, margin_3P = 0.02, 0.05
+    # TODO: use function `calculate_2_std_of_rotor_speed_samples`
+
+    # ========== 1P ==========
+    clr_1p = "0.7"
+
+    ax.axvspan(
+        max(0.0, f_1P[0] - margin_1P),
+        f_1P[1] + margin_1P,
+        color=clr_1p, zorder=0
+    )
+    ax.axvspan(
+        f_1P[0], f_1P[1],
+        facecolor="none", hatch="//",
+        edgecolor="black", linewidth=0.8, zorder=1
+    )
+
+    # ========== 3P ==========
+    clr_3p = "0.8"
+
+    ax.axvspan(
+        max(0.0, f_3P[0] - margin_3P),
+        f_3P[1] + margin_3P,
+        color=clr_3p, zorder=0
+    )
+    ax.axvspan(
+        f_3P[0], f_3P[1],
+        facecolor="none", hatch="\\\\",
+        edgecolor="black", linewidth=0.8, zorder=1
+    )
+
+    # ==================================================
+    # Structural frequencies for all designs
+    # ==================================================
+
+    rbm_names = [name for name in RBM_NAMES_SYMB_DICT.values()]
+
+    rbm_text_pos = np.linspace(0.6,0.98,6)
+
+    rbm_periods = {}
+    tower_periods = {}
+
+    for i, design in enumerate(design_labels):
+
+        if design not in df.index:
+            # Design labels are plot labels, not necessarily CSV index values.
+            # Use the row at the same position as a fallback.
+            row = df.iloc[i]
+        else:
+            row = df.loc[design]
+
+        color = colors[i]
+        marker = markers[i]
+
+        # --------------------------------------------------
+        # Rigid-body modes: raft.rigid_body_periods [s]
+        # --------------------------------------------------
+
+        periods = np.asarray(
+            ast.literal_eval(str(row["raft.rigid_body_periods"])),
+            dtype=float
+        ).ravel()
+
+        if len(periods) != 6:
+            raise ValueError(
+                f"Design {design}: expected 6 RBM periods, got {len(periods)}."
+            )
+
+        rbm_periods[design] = periods
+
+        for mode, period, tpos in zip(rbm_names, periods, rbm_text_pos):
+            if not np.isfinite(period) or period <= 0:
+                continue
+
+            ff = 1.0 / period
+
+            ax.axvline(
+                ff,
+                color=color,
+                linestyle="-.",
+                # linewidth=1.4,
+                # alpha=0.85,
+                zorder=3,
+                label=mode
+            )
+
+            ax.plot(
+                ff,
+                0.45,
+                marker=marker,
+                color=color,
+                markersize=14,
+                transform=ax.get_xaxis_transform(),
+                clip_on=False
+            )
+
+            ax.text(
+                ff,
+                tpos,
+                mode,
+                rotation=0,
+                va="top",
+                ha="center",
+                backgroundcolor="white",
+                zorder=10
+            )
+
+        # --------------------------------------------------
+        # Tower modes: floatingse.f1 and floatingse.f2 [Hz]
+        # --------------------------------------------------
+
+        f1 = float(row["floatingse.f1"])
+        f2 = float(row["floatingse.f2"])
+
+        tower_periods[design] = {
+            "tower_T1": 1.0 / f1 if f1 > 0 else np.nan,
+            "tower_T2": 1.0 / f2 if f2 > 0 else np.nan,
+        }
+
+        if i == 0:
+            ax.text(
+                f1,
+                0.98,
+                f"Tower (FA, SS)",
+                rotation=0,
+                va="top",
+                ha="center",
+                backgroundcolor="white",
+                zorder=10
+            )
+
+        for ff in (f1, f2):
+            if not np.isfinite(ff) or ff <= 0:
+                continue
+
+            ax.axvline(
+                ff,
+                color=color,
+                linestyle="--",
+                # linewidth=1.8,
+                # alpha=0.9,
+                zorder=4,
+                label=mode
+            )
+
+            ax.plot(
+                ff,
+                0.45,
+                marker=marker,
+                color=color,
+                markersize=14,
+                transform=ax.get_xaxis_transform(),
+                clip_on=False
+            )
+
+    # ==================================================
+    # Formatting
+    # ==================================================
+
+    ax.set_xlabel("Frequency [Hz]")
+    ax.set_ylabel("Normalized Power Spectrum")
+    ax.set_xlim(0, f.max())
+    ax.set_ylim(0, 1.05)
+    ax.set_title(title)
+    ax.grid(True, which="both", alpha=0.25)
+
+    # Legend handles
+    handles = [
+        Patch(
+            facecolor=clr_1p, alpha=0.5,
+            label="1P constraint"
+        ),
+        Patch(
+            facecolor="none", hatch="//", edgecolor="black",
+            label="1P design range"
+        ),
+        Patch(
+            facecolor=clr_3p, alpha=0.5,
+            label="3P constraint"
+        ),
+        Patch(
+            facecolor="none", hatch="//", edgecolor="black",
+            label="3P design range"
+        ),
+        Line2D(
+            [0], [0], color=clr_wave_spec,
+            label="Wave spectrum (JONSWAP)"
+        ),
+        Line2D(
+            [0], [0], color=clr_wind_spec,
+            label="Wind spectrum (Kaimal)"
+        ),
+        Line2D(
+            [0], [0], color="black", linestyle="-.",
+            label="Rigid-body modes"
+        ),
+        Line2D(
+            [0], [0], color="black", linestyle="--",
+            label="Tower modes"
+        ),
+    ]
+
+    # One legend entry per design, using supplied colors and markers
+    for design, color, marker in zip(design_labels, colors, markers):
+        handles.append(
+            Line2D(
+                [0], [0],
+                color=color,
+                marker=marker,
+                linestyle="none",
+                label=str(design)
+            )
+        )
+
+    ax.legend(
+        loc="lower center",
+        handles=handles,
+        ncol=4,
+        bbox_to_anchor=(0.5,-0.5),
+    )
+
+    fig.tight_layout()
+
+    return fig, ax, rbm_periods, tower_periods
