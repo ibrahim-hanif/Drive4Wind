@@ -464,3 +464,410 @@ def plot_bars_force_moment_loads(
     fig.tight_layout()
 
     return fig, axs, F, M
+
+#%%[markdown]
+# ### Plot scalar variables for multiple designs
+#%%
+def plot_comparison_bar_plot_of_float_vars_from_csv(
+        csv_path,
+        lst_vars,
+        name_col="name",
+        design_labels=None,
+        colors=None,
+        ncols=3,
+        figsize=None,
+        show_percent=True,
+        reference_index=0,
+        percent_decimals=1,
+        title="Maximum Results Comparison",
+        idx_axis_show_legend=0):
+    """
+    Compare scalar/float variables between an arbitrary number
+    of designs stored as rows of a CSV.
+
+    Parameters
+    ----------
+    csv_path : str
+        Path to comparison CSV.
+
+    lst_vars : list of tuples
+        Each tuple must have the form:
+
+            (variable_name, plot_label, unit)
+
+        Example:
+            ("raft.Max_Offset", r"$x_{max}$", "[m]")
+
+    name_col : str
+        CSV column containing the design names.
+
+    design_labels : list[str] or None
+        Optional custom labels for each CSV row/design.
+        If None, labels are taken from `name_col`.
+
+    colors : list or None
+        Optional list of colors, one per design.
+        If None, colors are generated automatically.
+
+    ncols : int
+        Maximum number of subplot columns.
+
+    figsize : tuple or None
+        Figure size. If None, automatically determined.
+
+    show_percent : bool
+        If True, write percentage differences above/below
+        non-reference bars.
+
+    reference_index : int
+        Design/row treated as the reference for percentage
+        differences.
+
+    percent_decimals : int
+        Number of decimal places shown in percentage values.
+
+    title : str or None
+        Figure title.
+
+    loc_save_img : str or None
+        Optional path for saving the figure.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+
+    axs : ndarray
+        Flat array containing only the active subplot axes.
+
+    values : ndarray
+        Shape:
+            (n_designs, n_variables)
+
+        values[i, j] is variable j for design i.
+
+    differences : ndarray
+        Percentage differences relative to reference_index.
+        Same shape as values.
+    """
+
+    # ========================================================
+    # Read CSV
+    # ========================================================
+
+    df = pd.read_csv(csv_path)
+
+    n_designs = len(df)
+    nvars = len(lst_vars)
+
+    if n_designs < 1:
+        raise ValueError("CSV contains no design rows.")
+
+    if nvars < 1:
+        raise ValueError("lst_vars contains no variables.")
+
+    if not 0 <= reference_index < n_designs:
+        raise ValueError(
+            f"reference_index={reference_index} is invalid for "
+            f"{n_designs} designs."
+        )
+
+    # ========================================================
+    # Check requested variables
+    # ========================================================
+
+    missing_vars = [
+        var
+        for var, _, _ in lst_vars
+        if var not in df.columns
+    ]
+
+    if missing_vars:
+        raise KeyError(
+            "The following variables are missing from the CSV:\n"
+            + "\n".join(missing_vars)
+        )
+
+    # ========================================================
+    # Variable labels / units
+    # ========================================================
+
+    labels = [
+        label
+        for _, label, _ in lst_vars
+    ]
+
+    units = [
+        unit
+        for _, _, unit in lst_vars
+    ]
+
+    # ========================================================
+    # Extract values
+    #
+    # Shape:
+    #     n_designs x nvars
+    # ========================================================
+
+    values = np.array(
+        [
+            [
+                float(row[var])
+                for var, _, _ in lst_vars
+            ]
+            for _, row in df.iterrows()
+        ],
+        dtype=float
+    )
+
+    # ========================================================
+    # Design labels
+    # ========================================================
+
+    if design_labels is None:
+
+        if name_col in df.columns:
+
+            design_labels = (
+                df[name_col]
+                .astype(str)
+                .tolist()
+            )
+
+        else:
+
+            design_labels = [
+                f"Design {i + 1}"
+                for i in range(n_designs)
+            ]
+
+    if len(design_labels) != n_designs:
+        raise ValueError(
+            "Number of design_labels must equal the "
+            "number of designs/rows in the CSV."
+        )
+
+    # ========================================================
+    # Colors
+    # ========================================================
+
+    if colors is None:
+
+        cmap = plt.get_cmap("tab10")
+
+        colors = [
+            cmap(i % 10)
+            for i in range(n_designs)
+        ]
+
+    elif len(colors) < n_designs:
+
+        raise ValueError(
+            f"{n_designs} designs were found, but only "
+            f"{len(colors)} colors were provided."
+        )
+
+    # ========================================================
+    # Percentage differences relative to reference
+    # ========================================================
+
+    ref_values = values[reference_index]
+
+    with np.errstate(
+            divide="ignore",
+            invalid="ignore"):
+
+        differences = (
+            (values - ref_values)
+            / ref_values
+            * 100.0
+        )
+
+    # Reference is exactly zero difference
+    differences[reference_index, :] = 0.0
+
+    # ========================================================
+    # Subplot arrangement
+    # ========================================================
+
+    # Do not create more columns than variables
+    ncols_plot = min(ncols, nvars)
+
+    nrows = math.ceil(
+        nvars / ncols_plot
+    )
+
+    if figsize is None:
+
+        figsize = (
+            5.5 * ncols_plot,
+            4.5 * nrows
+        )
+
+    fig, axs = plt.subplots(
+        nrows,
+        ncols_plot,
+        figsize=figsize,
+        squeeze=False
+    )
+
+    axs = axs.flatten()
+
+    # ========================================================
+    # Adaptive bar positioning
+    # ========================================================
+
+    # Total width occupied by one group of bars
+    group_width = 0.80
+
+    bar_width = (
+        group_width
+        / n_designs
+    )
+
+    offsets = (
+        np.arange(n_designs)
+        - (n_designs - 1) / 2
+    ) * bar_width
+
+    # ========================================================
+    # Plot each variable
+    # ========================================================
+
+    for j, ax in enumerate(axs[:nvars]):
+
+        variable_values = values[:, j]
+
+        # ----------------------------------------------------
+        # Bars
+        # ----------------------------------------------------
+
+        for i in range(n_designs):
+
+            ax.bar(
+                offsets[i],
+                variable_values[i],
+                width=bar_width,
+                color=colors[i],
+                label=design_labels[i]
+            )
+
+        # ----------------------------------------------------
+        # Percentage annotations
+        # ----------------------------------------------------
+
+        if show_percent:
+
+            scale = max(
+                np.max(
+                    np.abs(variable_values)
+                ),
+                1e-12
+            )
+
+            text_offset = 0.04 * scale
+
+            for i in range(n_designs):
+
+                # Don't display +0% on reference
+                if i == reference_index:
+                    continue
+
+                diff = differences[i, j]
+                value = variable_values[i]
+
+                if not np.isfinite(diff):
+                    continue
+
+                if value >= 0:
+
+                    y = value + text_offset
+                    va = "bottom"
+
+                else:
+
+                    y = value - text_offset
+                    va = "top"
+
+                ax.text(
+                    offsets[i],
+                    y,
+                    f"{diff:+.{percent_decimals}f}%",
+                    ha="center",
+                    va=va
+                )
+
+        # ----------------------------------------------------
+        # Axis formatting
+        # ----------------------------------------------------
+
+        ax.set_xticks([0])
+
+        ax.set_xticklabels(
+            [labels[j]]
+        )
+
+        ax.set_ylabel(
+            units[j]
+        )
+
+        ax.grid(
+            True,
+            axis="y",
+            alpha=0.4
+        )
+
+        ax.set_axisbelow(True)
+
+        ax.axhline(
+            0.0,
+            color="black",
+            # linewidth=0.8
+        )
+
+        # Additional space for annotations
+        ymin, ymax = ax.get_ylim()
+
+        yrange = ymax - ymin
+
+        if yrange > 0:
+
+            ax.set_ylim(
+                ymin - 0.04 * yrange,
+                ymax + 0.12 * yrange
+            )
+
+    # ========================================================
+    # Remove unused subplots
+    # ========================================================
+
+    for ax in axs[nvars:]:
+        ax.remove()
+
+    # Keep only actually used axes in return
+    axs_active = axs[:nvars]
+
+    # ========================================================
+    # Legend
+    # ========================================================
+
+    axs_active[ idx_axis_show_legend ].legend()
+
+    # ========================================================
+    # Figure title
+    # ========================================================
+
+    if title is not None:
+        fig.suptitle(title)
+
+    fig.tight_layout()
+
+    # Note:
+    # intentionally no plt.show() here.
+    # This lets you modify fig/axs afterwards.
+
+    return (
+        fig,
+        axs_active,
+        values,
+        differences
+    )
