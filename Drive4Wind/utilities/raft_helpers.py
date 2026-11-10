@@ -875,6 +875,15 @@ def plot_comparison_bar_plot_of_float_vars_from_csv(
 #%%[markdown]
 # ### Plot changes in rigid body periods
 #%%
+RBM_NAMES_SYMB_DICT = {
+    "surge": r"$(x)$",
+    "sway ": r"$(y)$",
+    "heave ": r"$(z)$",
+    "roll ": r"$(\phi)$",
+    "pitch ": r"$(\theta)$",
+    "yaw ": r"$(\psi)$",
+}
+
 def plot_comparison_bar_plot_of_1Darray_from_csv(
         csv_path,
         lst_vars,
