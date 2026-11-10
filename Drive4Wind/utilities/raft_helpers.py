@@ -81,7 +81,7 @@ def parse_variables_from_csv_to_dict(
         dict_vals = var_df2dict( df )
 
         # NOTE: add first column as 'name' with names of each design 'iea15_UN_*'
-        outputs_dict["name"].append( csv_dir.split("\\")[1] )
+        outputs_dict["name"].append( csv_dir.split("\\")[-2] )
 
         # loop each variable in this csv
         for iv, var in enumerate(lst_variables):
