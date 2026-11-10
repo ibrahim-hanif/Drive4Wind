@@ -346,7 +346,7 @@ def plot_bars_force_moment_loads(
                     offset_y = (
                         0.04
                         * max(
-                            abs(F[j]).max(),
+                            abs(F[i,j]).max(),
                             1e-12
                         )
                     )
@@ -376,7 +376,7 @@ def plot_bars_force_moment_loads(
                     offset_y = (
                         0.04
                         * max(
-                            abs(M[j]).max(),
+                            abs(M[i,j]).max(),
                             1e-12
                         )
                     )
