@@ -1904,3 +1904,327 @@ def plot_comparison_windspeed_series_from_csv(
         all_values,
         all_differences
     )
+# %%
+def plot_comparison_Tmoor_windspeed_from_csv(
+        csv_path,
+        var="raft.stats_Tmoor_max",
+        wind_speeds=None,
+        index_start_end=(0, 12),
+        tendon_index=0,
+        name_col="name",
+        design_labels=None,
+        colors=None,
+        markers=None,
+        figsize=(14, 5),
+        reference_index=0,
+        title=None):
+
+    df = pd.read_csv(csv_path)
+
+    n_designs = len(df)
+
+    if n_designs < 1:
+        raise ValueError("CSV contains no design rows.")
+
+    if not 0 <= reference_index < n_designs:
+        raise ValueError(
+            f"reference_index={reference_index} is invalid "
+            f"for {n_designs} designs."
+        )
+
+    if var not in df.columns:
+        raise KeyError(
+            f"Variable '{var}' not found in CSV."
+        )
+
+    # ========================================================
+    # Design labels
+    # ========================================================
+
+    if design_labels is None:
+
+        if name_col in df.columns:
+
+            design_labels = (
+                df[name_col]
+                .astype(str)
+                .tolist()
+            )
+
+        else:
+
+            design_labels = [
+                f"Design {i + 1}"
+                for i in range(n_designs)
+            ]
+
+    if len(design_labels) != n_designs:
+        raise ValueError(
+            "Number of design_labels must equal "
+            "number of CSV rows/designs."
+        )
+
+    # ========================================================
+    # Colors
+    # ========================================================
+
+    if colors is None:
+
+        cmap = plt.get_cmap("tab10")
+
+        colors = [
+            cmap(i % 10)
+            for i in range(n_designs)
+        ]
+
+    elif len(colors) < n_designs:
+
+        raise ValueError(
+            f"{n_designs} designs found but only "
+            f"{len(colors)} colors supplied."
+        )
+
+    # ========
+    # Markers
+    # ========
+    if markers is None: markers = ["o"] * n_designs
+
+    # ========================================================
+    # Parse 2D array
+    # ========================================================
+
+    def parse_2d_array(value):
+
+        arr = np.asarray(
+            ast.literal_eval(str(value)),
+            dtype=float
+        )
+
+        if arr.ndim != 2:
+            raise ValueError(
+                f"{var} expected to be 2D, "
+                f"but received shape {arr.shape}."
+            )
+
+        return arr
+
+    # ========================================================
+    # Slice definition
+    # ========================================================
+
+    if len(index_start_end) != 2:
+        raise ValueError(
+            "index_start_end must be "
+            "(start_index, end_index)."
+        )
+
+    i_start, i_end = index_start_end
+
+    # ========================================================
+    # Extract selected tendon for every design
+    # ========================================================
+
+    values_list = []
+
+    for i in range(n_designs):
+
+        arr = parse_2d_array(
+            df.iloc[i][var]
+        )
+
+        if tendon_index >= arr.shape[1]:
+
+            raise ValueError(
+                f"tendon_index={tendon_index} is invalid. "
+                f"{var} has {arr.shape[1]} tendon columns."
+            )
+
+        vals = arr[
+            i_start:i_end,
+            tendon_index
+        ]
+
+        values_list.append(vals)
+
+    # Shape:
+    #   n_designs x n_wind_speeds
+
+    values = np.vstack(
+        values_list
+    ) / 1e6
+
+    n = values.shape[1]
+
+    # ========================================================
+    # Wind speeds
+    # ========================================================
+
+    if wind_speeds is None:
+
+        x = np.arange(n)
+
+    else:
+
+        if len(wind_speeds) != n:
+
+            raise ValueError(
+                f"Selected {n} values from {var}, "
+                f"but len(wind_speeds)="
+                f"{len(wind_speeds)}."
+            )
+
+        x = np.asarray(
+            wind_speeds,
+            dtype=float
+        )
+
+    # ========================================================
+    # Percentage differences
+    # ========================================================
+
+    ref_values = values[reference_index]
+
+    with np.errstate(
+            divide="ignore",
+            invalid="ignore"):
+
+        differences = (
+            (values - ref_values)
+            / ref_values
+            * 100.0
+        )
+
+    differences[reference_index, :] = 0.0
+
+    # ========================================================
+    # Plot
+    #
+    # left  = tendon tension
+    # right = difference from reference
+    # ========================================================
+
+    fig, axs = plt.subplots(
+        1,
+        2,
+        figsize=figsize
+    )
+
+    ax_val = axs[0]
+    ax_diff = axs[1]
+
+    # --------------------------------------------------------
+    # Actual tension
+    # --------------------------------------------------------
+
+    for i in range(n_designs):
+
+        ax_val.plot(
+            x,
+            values[i],
+            # linewidth=2,
+            color=colors[i],
+            label=design_labels[i],
+            marker=markers[i],
+        )
+
+    # ax_val.set_title( f"Tendon {tendon_index + 1} Maximum Tension" )
+
+    ax_val.set_xlabel(
+        "Wind Speed [m/s]"
+    )
+    ax_val.set_xticks(x)
+
+    ax_val.set_ylabel(
+        "Tension [MN]"
+    )
+
+    ax_val.grid(
+        True,
+        alpha=0.3
+    )
+
+    ax_val.set_axisbelow(True)
+
+    # --------------------------------------------------------
+    # Percentage difference
+    # --------------------------------------------------------
+
+    for i in range(n_designs):
+
+        if i == reference_index:
+            continue
+
+        ax_diff.plot(
+            x,
+            differences[i],
+            # linewidth=2,
+            color=colors[i],
+            label=design_labels[i],
+            marker=markers[i],
+        )
+
+    ax_diff.axhline(
+        0.0,
+        color="black",
+        linestyle="--",
+        linewidth=1
+    )
+
+    # ax_diff.set_title( "Difference from Reference" )
+
+    ax_diff.set_xlabel(
+        "Wind Speed [m/s]"
+    )
+
+    ax_diff.set_ylabel(
+        "Difference [%]"
+    )
+
+    ax_diff.set_xticks(x)
+
+    ax_diff.grid(
+        True,
+        alpha=0.3
+    )
+
+    ax_diff.set_axisbelow(True)
+
+    # ========================================================
+    # Shared legend above both plots
+    # ========================================================
+
+    handles, legend_labels = (
+        ax_val.get_legend_handles_labels()
+    )
+
+    fig.legend(
+        handles,
+        legend_labels,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.94),
+        ncol=n_designs,
+        frameon=True,
+        fancybox=True
+    )
+
+    # ========================================================
+    # Title
+    # ========================================================
+
+    if title is not None:
+
+        fig.suptitle(
+            title,
+            y=0.995
+        )
+
+    fig.tight_layout(
+        rect=[0.0, 0.0, 1.0, 0.99]
+    )
+
+    return (
+        fig,
+        axs,
+        values,
+        differences
+    )
