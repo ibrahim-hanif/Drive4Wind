@@ -4,6 +4,9 @@
 import os
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import ast
+import math
 from wisdem.commonse.fileIO import var_df2dict
 
 #%%
