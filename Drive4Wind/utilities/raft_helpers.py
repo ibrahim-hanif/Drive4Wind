@@ -871,3 +871,325 @@ def plot_comparison_bar_plot_of_float_vars_from_csv(
         values,
         differences
     )
+
+#%%[markdown]
+# ### Plot changes in rigid body periods
+#%%
+def plot_comparison_bar_plot_of_1Darray_from_csv(
+        csv_path,
+        lst_vars,
+        name_col="name",
+        design_labels=None,
+        colors=None,
+        figsize=(10, 9),
+        show_percent=True,
+        reference_index=0,
+        percent_decimals=1,
+        title=None,
+    ):
+
+    # ========================================================
+    # Read CSV
+    # ========================================================
+
+    df = pd.read_csv(csv_path)
+
+    n_designs = len(df)
+
+    if n_designs < 1:
+        raise ValueError("CSV contains no design rows.")
+
+    if not 0 <= reference_index < n_designs:
+        raise ValueError(
+            f"reference_index={reference_index} is invalid "
+            f"for {n_designs} designs."
+        )
+
+    # ========================================================
+    # Design labels
+    # ========================================================
+
+    if design_labels is None:
+
+        if name_col in df.columns:
+            design_labels = df[name_col].astype(str).tolist()
+
+        else:
+            design_labels = [
+                f"Design {i + 1}"
+                for i in range(n_designs)
+            ]
+
+    if len(design_labels) != n_designs:
+        raise ValueError(
+            "Number of design_labels must equal "
+            "number of CSV rows/designs."
+        )
+
+    # ========================================================
+    # Colors
+    # ========================================================
+
+    if colors is None:
+
+        cmap = plt.get_cmap("tab10")
+
+        colors = [
+            cmap(i % 10)
+            for i in range(n_designs)
+        ]
+
+    elif len(colors) < n_designs:
+
+        raise ValueError(
+            f"{n_designs} designs found but only "
+            f"{len(colors)} colors supplied."
+        )
+
+    # ========================================================
+    # Parse CSV array
+    # ========================================================
+
+    def parse_array(value):
+
+        arr = np.asarray(
+            ast.literal_eval(str(value)),
+            dtype=float
+        )
+
+        return arr.squeeze().flatten()
+
+    # ========================================================
+    # Figure
+    # ========================================================
+
+    fig, axs = plt.subplots(
+        2,
+        1,
+        figsize=figsize
+    )
+
+    all_values = {}
+    all_differences = {}
+
+    # Rigid-body modes
+    mode_labels = [key + " " + val for key, val in RBM_NAMES_SYMB_DICT.items()]
+
+    # ========================================================
+    # Process variables
+    # ========================================================
+
+    for var, label, unit in lst_vars:
+
+        if var not in df.columns:
+            raise KeyError(
+                f"Variable '{var}' not found in CSV."
+            )
+
+        arrays = [
+            parse_array(df.iloc[i][var])
+            for i in range(n_designs)
+        ]
+
+        lengths = [len(arr) for arr in arrays]
+
+        if len(set(lengths)) != 1:
+            raise ValueError(
+                f"Different array lengths found for "
+                f"'{var}': {lengths}"
+            )
+
+        n = lengths[0]
+
+        if n != 6:
+            raise ValueError(
+                f"{var} has {n} elements. "
+                "This layout expects the 6 rigid-body modes."
+            )
+
+        values = np.vstack(arrays)
+
+        all_values[var] = values
+
+        # ====================================================
+        # Percentage differences
+        # ====================================================
+
+        ref_values = values[reference_index]
+
+        with np.errstate(
+                divide="ignore",
+                invalid="ignore"):
+
+            differences = (
+                (values - ref_values)
+                / ref_values
+                * 100.0
+            )
+
+        differences[reference_index, :] = 0.0
+
+        all_differences[var] = differences
+
+        # ====================================================
+        # Plot groups
+        # ====================================================
+
+        groups = [
+            (
+                axs[0],
+                np.array([0, 1, 2]),
+                mode_labels[:3]
+            ),
+            (
+                axs[1],
+                np.array([3, 4, 5]),
+                mode_labels[3:]
+            )
+        ]
+
+        for ax, indices, labels in groups:
+
+            x = np.arange(len(indices))
+
+            group_width = 0.80
+
+            bar_width = (
+                group_width
+                / n_designs
+            )
+
+            offsets = (
+                np.arange(n_designs)
+                - (n_designs - 1) / 2
+            ) * bar_width
+
+            # ================================================
+            # Plot designs
+            # ================================================
+
+            for i in range(n_designs):
+
+                ax.bar(
+                    x + offsets[i],
+                    values[i, indices],
+                    width=bar_width,
+                    color=colors[i],
+                    label=design_labels[i]
+                )
+
+            # ================================================
+            # Percentage annotations
+            # ================================================
+
+            if show_percent:
+
+                subset_values = values[:, indices]
+
+                scale = max(
+                    np.max(np.abs(subset_values)),
+                    1e-12
+                )
+
+                text_offset = 0.025 * scale
+
+                for i in range(n_designs):
+
+                    if i == reference_index:
+                        continue
+
+                    for j, idx in enumerate(indices):
+
+                        diff = differences[i, idx]
+                        value = values[i, idx]
+
+                        if not np.isfinite(diff):
+                            continue
+
+                        if value >= 0:
+                            y = value + text_offset
+                            va = "bottom"
+
+                        else:
+                            y = value - text_offset
+                            va = "top"
+
+                        ax.text(
+                            x[j] + offsets[i],
+                            y,
+                            f"{diff:+.{percent_decimals}f}%",
+                            ha="center",
+                            va=va
+                        )
+
+            # ================================================
+            # Formatting
+            # ================================================
+
+            ax.set_xticks(x)
+
+            ax.set_xticklabels(labels)
+
+            ax.set_ylabel(unit)
+
+            ax.grid(
+                True,
+                axis="y",
+                alpha=0.3
+            )
+
+            ax.set_axisbelow(True)
+
+            ax.axhline(
+                0.0,
+                color="black",
+                linewidth=0.8
+            )
+
+            # Give % labels additional space
+            ymin, ymax = ax.get_ylim()
+
+            yrange = ymax - ymin
+
+            if yrange > 0:
+
+                ax.set_ylim(
+                    ymin - 0.03 * yrange,
+                    ymax + 0.12 * yrange
+                )
+
+    # ========================================================
+    # Axis titles
+    # ========================================================
+
+    axs[0].set_title( "Translational Modes" )
+
+    axs[1].set_title( "Rotational Modes" )
+
+    # only one legend required
+    handles, labels = axs[0].get_legend_handles_labels()
+
+    # avoid duplicate entries if lst_vars has >1 variable
+    unique = dict(zip(labels, handles))
+
+    axs[0].legend(
+        unique.values(),
+        unique.keys()
+    )
+
+    # ========================================================
+    # Figure title
+    # ========================================================
+
+    if title is not None:
+        fig.suptitle(title)
+
+    fig.tight_layout()
+
+    # ========================================================
+    return (
+        fig,
+        axs,
+        all_values,
+        all_differences
+    )
