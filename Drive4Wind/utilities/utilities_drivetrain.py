@@ -448,12 +448,14 @@ def plot_drivetrain_mass_comparison(
     )
     ax.grid(axis="y", alpha=0.3)
 
-    plt.tight_layout()
+    fig.tight_layout()
     # -------------------------
     # save
     # -------------------------
-    if loc_save_img: plt.savefig( loc_save_img  )
-    plt.show()
+    if loc_save_img: fig.savefig( loc_save_img  )
+    fig.show()
+
+    return fig, ax
 # ==========
 #%%
 if __name__ == "__main__":
