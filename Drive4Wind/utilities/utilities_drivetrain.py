@@ -258,6 +258,8 @@ def write_yaml_of_drivetrain_properties( prob, loc_save_RNAprops4tower,
 def plot_drivetrain_mass_comparison( 
         csv_m4w, csv_iea,
         m4w_label='Made4Wind', iea_label='IEA 15MW',
+        figsize=(14, 14),
+        colors_m4w=None, colors_iea=None,
         flag_WTnamespace=False, loc_save_img=None ):
     """
     plot drivetrain or nacelle mass breakdown comparison between
@@ -358,17 +360,26 @@ def plot_drivetrain_mass_comparison(
     # Consistent hatching / coloring
     hatches = ['/', '\\', 'x', '-', '+', 'o', 'O', '.', '*', '//', 'xx', '++']
     # Colors:
-    # ---- tab10
-    tab10 = plt.cm.tab10.colors
-    colors = list(tab10) + list(tab10[:2])  # extend to 12 components
-    # ----- Made4Wind
-    colors = []
-    for key,val in clrs_m4w.items():
-        colors.append(val)
-    colors = np.flip(colors)
-    if len_compns > len(colors):
-        # mul = np.ceil( len_compns/len(colors), 0)
-        colors *= 2
+    if (colors_m4w is None) or (colors_iea is None):
+        colors = []
+        # ---- tab10
+        tab10 = plt.cm.tab10.colors
+        colors = list(tab10) + list(tab10[:2])  # extend to 12 components
+        # ----- Made4Wind
+        colors = []
+        for key,val in clrs_m4w.items():
+            colors.append(val)
+        colors_m4w = np.flip(colors)
+        colors_iea = np.flip(colors)
+
+    else:
+        colors_m4w = [colors_m4w]
+        colors_m4w *= len_compns
+        colors_iea = [colors_iea]
+        colors_iea *= len_compns
+    
+    if len_compns > len(colors_m4w): colors_m4w *= 2
+    if len_compns > len(colors_iea): colors_iea *= 2
     
     # -------------------------
     # options: Journal polish
@@ -388,7 +399,7 @@ def plot_drivetrain_mass_comparison(
     # Figure
     # --------------------------------------------------
     # --- Figure setup ---
-    fig, ax = plt.subplots(figsize=(14, 14))
+    fig, ax = plt.subplots(figsize=figsize)
 
     x = np.array([0, 1])
     labels = [iea_label, m4w_label]
@@ -400,16 +411,17 @@ def plot_drivetrain_mass_comparison(
     tops_IEA, tops_M4W = [], []
 
     for i, comp in enumerate(components):
+        # IEA
         ax.bar(
             x[0], mass_IEA[comp], bottom=bottom_IEA,
-            width=bar_width, color=colors[i],
+            width=bar_width, color=colors_iea[i],
             hatch=hatches[i], edgecolor="black",
             label=comp,
         )
-
+        # M4W
         ax.bar(
             x[1], mass_M4W[comp], bottom=bottom_M4W,
-            width=bar_width, color=colors[i],
+            width=bar_width, color=colors_m4w[i],
             hatch=hatches[i], edgecolor="black",
         )
 
