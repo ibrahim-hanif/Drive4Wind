@@ -613,6 +613,8 @@ def plot_drivetrain_constraints(
                 "constr_L10_mb1",
                 "constr_L10_mb2",
             ],
+        colors=["tab:cyan", "tab:blue", "tab:purple"],
+        markers=["o","*","s"],
         flag_WTnamespace=False,
         loc_save_img=None):
 
@@ -648,7 +650,7 @@ def plot_drivetrain_constraints(
 
     ax = axs[0]
 
-    for var in vonmises_vars:
+    for i, var in enumerate(vonmises_vars):
 
         val = dict_vals[prefix+var]
 
@@ -660,7 +662,8 @@ def plot_drivetrain_constraints(
         ax.plot(
             np.arange(len(arr)),
             arr,
-            marker="o",
+            color=colors[i],
+            marker=markers[i],
             linewidth=4,
             label=var.split("_")[1]
         )
@@ -719,7 +722,7 @@ def plot_drivetrain_constraints(
         color="k",
         linestyle="--",
         linewidth=2,
-        label="Limit = 1.0"
+        label="1.0 limit"
     )
 
     for i, v in enumerate(values):
