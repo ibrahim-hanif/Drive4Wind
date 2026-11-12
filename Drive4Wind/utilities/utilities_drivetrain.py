@@ -260,6 +260,7 @@ def plot_drivetrain_mass_comparison(
         m4w_label='Made4Wind', iea_label='IEA 15MW',
         figsize=(14, 14),
         colors_m4w=None, colors_iea=None,
+        fontsize_legend=18,
         flag_WTnamespace=False, loc_save_img=None ):
     """
     plot drivetrain or nacelle mass breakdown comparison between
@@ -371,12 +372,6 @@ def plot_drivetrain_mass_comparison(
             colors.append(val)
         colors_m4w = np.flip(colors)
         colors_iea = np.flip(colors)
-
-    else:
-        colors_m4w = [colors_m4w]
-        colors_m4w *= len_compns
-        colors_iea = [colors_iea]
-        colors_iea *= len_compns
     
     if len_compns > len(colors_m4w): colors_m4w *= 2
     if len_compns > len(colors_iea): colors_iea *= 2
@@ -392,8 +387,6 @@ def plot_drivetrain_mass_comparison(
             "lines.markersize": 6,
         }
     plt.rcParams.update( params_plot_rc )
-
-    fontsize = 18
 
     # --------------------------------------------------
     # Figure
@@ -444,10 +437,16 @@ def plot_drivetrain_mass_comparison(
     total_M4W = sum(mass_M4W.values())
     offset = 8.0
 
-    ax.text(x[0], total_IEA + offset, rf"${total_IEA:.0f}\,\mathrm{{t}}$",
-            ha="center", va="bottom", fontsize=fontsize, fontweight="bold")
-    ax.text(x[1], total_M4W + offset, rf"${total_M4W:.0f}\,\mathrm{{t}}$",
-            ha="center", va="bottom", fontsize=fontsize, fontweight="bold")
+    ax.text(
+        x[0], total_IEA + offset, rf"${total_IEA:.0f}\,\mathrm{{t}}$",
+        ha="center", va="bottom",
+        fontsize=fontsize_legend, fontweight="bold"
+    )
+    ax.text(
+        x[1], total_M4W + offset, rf"${total_M4W:.0f}\,\mathrm{{t}}$",
+        ha="center", va="bottom",
+        fontsize=fontsize_legend, fontweight="bold"
+    )
 
     # --- Formatting ---
     ax.set_xticks(x)
@@ -456,7 +455,7 @@ def plot_drivetrain_mass_comparison(
     ax.set_title("Comparison of nacelle mass distribution")
     ax.legend(
         loc="center",
-        fontsize=fontsize, frameon=True
+        fontsize=fontsize_legend, frameon=True
     )
     ax.grid(axis="y", alpha=0.3)
 
