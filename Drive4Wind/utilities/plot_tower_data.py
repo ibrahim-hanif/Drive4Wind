@@ -677,33 +677,43 @@ def plot_nac_tower_mass_comparison(
         path to csv file with
         - rows of different turbine setups (e.g. `basecase, de-coupled, integrated`), and
         - columns of different turbine output results (e.g. `drivese.nacelle_mass, towerse.tower_mass, floatingse.turbine_mass`)
+
+    Percentage differences for nacelle, tower, and turbine masses 
+    are calculated relative to the first setup (basecase).
     """
 
     df = pd.read_csv(path_csv_compr_turbs)
 
-    # labels -----
+    # Labels
     if labels is None:
         labels = df["name"].astype(str).tolist()
-    # -----
 
-    # colors -----
+    # Colors
     if colors is None:
         colors = ["0.7"] * len(df)
 
     if len(colors) != len(df):
         raise ValueError("colors must contain one color per setup.")
-    # -----
 
-    # hashes -----
-    if hatches == None: hatches = ["", "\\"]
-    # -----
+    # Hatches
+    if hatches is None:
+        hatches = ["", "\\"]
 
+    if len(hatches) != 2:
+        raise ValueError("hatches must contain two patterns: nacelle and tower.")
+
+    # Masses [tonnes]
     nacelle = df["drivese.nacelle_mass"].to_numpy() / 1000.0
     tower = df["towerse.tower_mass"].to_numpy() / 1000.0
     turbine = df["floatingse.turbine_mass"].to_numpy() / 1000.0
 
     x = np.arange(len(df))
     total = nacelle + tower
+
+    # Percentage differences relative to basecase
+    nacelle_diff = (nacelle - nacelle[0]) / nacelle[0] * 100.0
+    tower_diff = (tower - tower[0]) / tower[0] * 100.0
+    turbine_diff = (turbine - turbine[0]) / turbine[0] * 100.0
 
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -729,41 +739,53 @@ def plot_nac_tower_mass_comparison(
             label="Tower" if i == 0 else None,
         )
 
-        # Nacelle mass inside the lower segment
+        # Nacelle mass and percentage difference
+        if i == 0: nac_txt_diff = ""
+        else: nac_txt_diff = f"\n({nacelle_diff[i]:+.1f}%)"
         ax.text(
             x[i], nacelle[i] / 2,
-            f"{nacelle[i]:,.1f}",
-            ha="center", va="center",
-            # fontsize=9,
+            f"{nacelle[i]:,.1f}" + nac_txt_diff,
+            ha="center",
+            va="center",
             fontweight="bold",
         )
 
-        # Tower mass inside the upper segment
+        # Tower mass and percentage difference
+        if i == 0: tower_txt_diff = ""
+        else: tower_txt_diff = f"\n({tower_diff[i]:+.1f}%)"
         ax.text(
             x[i], nacelle[i] + tower[i] / 2,
-            f"{tower[i]:,.1f}",
-            ha="center", va="center",
-            # fontsize=9,
+            f"{tower[i]:,.1f}" + tower_txt_diff,
+            ha="center",
+            va="center",
             fontweight="bold",
         )
 
-        # Total turbine mass above the stacked bar
+        # Turbine mass and percentage difference
+        if i == 0: turb_txt_diff = ""
+        else: turb_txt_diff = f"\n({turbine_diff[i]:+.1f}%)"
         ax.annotate(
-            f"{turbine[i]:,.1f} t",
+            f"{turbine[i]:,.1f} t" + turb_txt_diff,
             xy=(x[i], total[i]),
             xytext=(0, 7),
             textcoords="offset points",
             ha="center",
-            # fontsize=9,
+            va="bottom",
             fontweight="bold",
+            bbox=dict(
+                facecolor="white",
+                edgecolor="none",
+                alpha=0.9,
+                boxstyle="round,pad=0.2",
+            ),
         )
 
+    # Grey dotted line connecting stacked bar tops
     ax.plot(
         x, total,
-        color="black",
+        color="grey",
         marker="o",
-        linestyle="-",
-        # linewidth=1.2,
+        linestyle=":",
         label="Turbine",
         zorder=3,
     )
@@ -774,11 +796,13 @@ def plot_nac_tower_mass_comparison(
     ax.set_title(title)
     ax.grid(axis="y", linestyle=":", alpha=0.5)
     ax.set_axisbelow(True)
-    if box_legend == None: ax.legend()
+
+    if box_legend is None:
+        ax.legend()
     else:
         fig.legend(
             bbox_to_anchor=box_legend,
-            ncol=3
+            ncol=3,
         )
 
     fig.tight_layout()
