@@ -661,3 +661,125 @@ def plot_tower_constraints_stress_utils(
     plt.tight_layout()
 
     return fig, ax
+
+#%%
+def plot_nac_tower_mass_comparison(
+    path_csv_compr_turbs,
+    labels=None,
+    colors=None,
+    hatches=None,
+    figsize=(10, 6),
+    title="Nacelle and Tower Mass Comparison",
+    box_legend=None,
+):
+    """
+    path_csv_compr_turbs: str
+        path to csv file with
+        - rows of different turbine setups (e.g. `basecase, de-coupled, integrated`), and
+        - columns of different turbine output results (e.g. `drivese.nacelle_mass, towerse.tower_mass, floatingse.turbine_mass`)
+    """
+
+    df = pd.read_csv(path_csv_compr_turbs)
+
+    # labels -----
+    if labels is None:
+        labels = df["name"].astype(str).tolist()
+    # -----
+
+    # colors -----
+    if colors is None:
+        colors = ["0.7"] * len(df)
+
+    if len(colors) != len(df):
+        raise ValueError("colors must contain one color per setup.")
+    # -----
+
+    # hashes -----
+    if hatches == None: hatches = ["", "\\"]
+    # -----
+
+    nacelle = df["drivese.nacelle_mass"].to_numpy() / 1000.0
+    tower = df["towerse.tower_mass"].to_numpy() / 1000.0
+    turbine = df["floatingse.turbine_mass"].to_numpy() / 1000.0
+
+    x = np.arange(len(df))
+    total = nacelle + tower
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    bar_width = 0.55
+
+    for i in range(len(df)):
+        ax.bar(
+            x[i], nacelle[i],
+            width=bar_width,
+            color=colors[i],
+            edgecolor="black",
+            hatch=hatches[0],
+            label="Nacelle" if i == 0 else None,
+        )
+
+        ax.bar(
+            x[i], tower[i],
+            bottom=nacelle[i],
+            width=bar_width,
+            color=colors[i],
+            edgecolor="black",
+            hatch=hatches[1],
+            label="Tower" if i == 0 else None,
+        )
+
+        # Nacelle mass inside the lower segment
+        ax.text(
+            x[i], nacelle[i] / 2,
+            f"{nacelle[i]:,.1f}",
+            ha="center", va="center",
+            # fontsize=9,
+            fontweight="bold",
+        )
+
+        # Tower mass inside the upper segment
+        ax.text(
+            x[i], nacelle[i] + tower[i] / 2,
+            f"{tower[i]:,.1f}",
+            ha="center", va="center",
+            # fontsize=9,
+            fontweight="bold",
+        )
+
+        # Total turbine mass above the stacked bar
+        ax.annotate(
+            f"{turbine[i]:,.1f} t",
+            xy=(x[i], total[i]),
+            xytext=(0, 7),
+            textcoords="offset points",
+            ha="center",
+            # fontsize=9,
+            fontweight="bold",
+        )
+
+    ax.plot(
+        x, total,
+        color="black",
+        marker="o",
+        linestyle="-",
+        # linewidth=1.2,
+        label="Turbine",
+        zorder=3,
+    )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.set_ylabel("Mass [t]")
+    ax.set_title(title)
+    ax.grid(axis="y", linestyle=":", alpha=0.5)
+    ax.set_axisbelow(True)
+    if box_legend == None: ax.legend()
+    else:
+        fig.legend(
+            bbox_to_anchor=box_legend,
+            ncol=3
+        )
+
+    fig.tight_layout()
+    return fig, ax
