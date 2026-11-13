@@ -274,6 +274,15 @@ def plot_drivetrain_mass_comparison(
         whether to use the complete wind-turbine (WT) namespace for problem variables or not
         False (default): prob["lss_mass"]
         True: prob["drivese.lss_mass"]
+    colors_: 2d-array
+        with elements [ # of colors, 3 or 4 ]    
+        3, if (r,g,b); and 4, if (r,g,b,transparency)
+        e.g.
+        ```
+        import numpy as np
+        from matplotlib import colormaps
+        colors_ = colormaps["Greens"]( np.linspace(0,1,10) )
+        ```
     
     Outputs
     _______
@@ -362,19 +371,23 @@ def plot_drivetrain_mass_comparison(
     hatches = ['/', '\\', 'x', '-', '+', 'o', 'O', '.', '*', '//', 'xx', '++']
     # Colors:
     if (colors_m4w is None) or (colors_iea is None):
-        colors = []
         # ---- tab10
         tab10 = plt.cm.tab10.colors
-        colors = list(tab10) + list(tab10[:2])  # extend to 12 components
+        colors = np.array(
+            list(tab10) + list(tab10[:2]) # extend to 12 components
+        )   # array because usual 
+
         # ----- Made4Wind
-        colors = []
-        for key,val in clrs_m4w.items():
-            colors.append(val)
+        colors = np.array(list(clrs_m4w.values()))
         colors_m4w = np.flip(colors)
         colors_iea = np.flip(colors)
     
-    if len_compns > len(colors_m4w): colors_m4w *= 2
-    if len_compns > len(colors_iea): colors_iea *= 2
+    if len_compns > colors_m4w.shape[0]:
+        repeats = int(np.ceil(len_compns / colors_m4w.shape[0]))
+        colors_m4w = np.tile(colors_m4w, (repeats, 1))[:len_compns]
+    if len_compns > colors_iea.shape[0]:
+        repeats = int(np.ceil(len_compns / colors_iea.shape[0]))
+        colors_iea = np.tile(colors_iea, (repeats, 1))[:len_compns]
     
     # -------------------------
     # options: Journal polish
