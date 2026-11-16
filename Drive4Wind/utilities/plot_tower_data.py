@@ -747,7 +747,13 @@ def plot_nac_tower_mass_comparison(
             f"{nacelle[i]:,.1f}" + nac_txt_diff,
             ha="center",
             va="center",
-            fontweight="bold",
+            # fontweight="bold",
+            bbox=dict(
+                facecolor=colors[i],
+                edgecolor="none",
+                alpha=0.9,
+                boxstyle="round,pad=0.2",
+            ),
         )
 
         # Tower mass and percentage difference
@@ -758,7 +764,13 @@ def plot_nac_tower_mass_comparison(
             f"{tower[i]:,.1f}" + tower_txt_diff,
             ha="center",
             va="center",
-            fontweight="bold",
+            # fontweight="bold",
+            bbox=dict(
+                facecolor=colors[i],
+                edgecolor="none",
+                alpha=0.9,
+                boxstyle="round,pad=0.2",
+            ),
         )
 
         # Turbine mass and percentage difference
@@ -771,7 +783,7 @@ def plot_nac_tower_mass_comparison(
             textcoords="offset points",
             ha="center",
             va="bottom",
-            fontweight="bold",
+            # fontweight="bold",
             bbox=dict(
                 facecolor="white",
                 edgecolor="none",
