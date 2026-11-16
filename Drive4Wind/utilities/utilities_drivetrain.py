@@ -796,3 +796,261 @@ def plot_drivetrain_constraints(
     return fig, axs
 
 #%%
+
+def plot_nacelle_cm_comparison(
+    path_csv_compr_turbs=None,
+    NacCM_array=None,
+    labels=None,
+    colors=None,
+    markers=None,
+    figsize=(12, 5),
+    title="Nacelle Center of Mass Comparison",
+    n_ticks=6,
+    markersize=120,
+):
+    """
+    Plot nacelle center of mass coordinates for different turbine setups.
+
+    Parameters
+    ----------
+    Required: either `path_csv_compr_turbs` or `NacCM_array`,
+    for comparing nacelle CM properties
+    
+    path_csv_compr_turbs : str, required (option 1)
+        CSV path containing 'drivese.nacelle_cm' and optionally 'name'.
+
+    NacCM_array : np.ndarray, required (option 2)
+        Array of shape (n_setups, 3), with columns [x, y, z] in metres.
+
+    labels : list, optional
+        Labels for the turbine setups.
+
+    colors : list, optional
+        Colors for each turbine setup.
+
+    markers : list, optional
+        Markers for each turbine setup.
+
+    figsize : tuple
+        Figure size.
+
+    title : str
+        Figure title.
+
+    n_ticks : int
+        Number of ticks per axis.
+
+    Returns
+    -------
+    fig, ax
+        Matplotlib figure and axes.
+    """
+
+    # --------------------------------------------------
+    # Read center-of-mass coordinates
+    # --------------------------------------------------
+    if NacCM_array is None and path_csv_compr_turbs is not None:
+        df = pd.read_csv(path_csv_compr_turbs)
+
+        NacCM_array = np.array([
+            ast.literal_eval(value)
+            if isinstance(value, str) else value
+            for value in df["drivese.nacelle_cm"]
+        ], dtype=float)
+
+        if labels is None and "name" in df.columns:
+            labels = df["name"].astype(str).tolist()
+
+    elif NacCM_array is not None and path_csv_compr_turbs is not None:
+        raise ValueError(
+            "Provide either path_csv_compr_turbs or NacCM_array, not both."
+        )
+
+    elif NacCM_array is None:
+        raise ValueError(
+            "Provide either path_csv_compr_turbs or NacCM_array."
+        )
+
+    NacCM_array = np.asarray(NacCM_array, dtype=float)
+
+    if NacCM_array.ndim != 2 or NacCM_array.shape[1] != 3:
+        raise ValueError(
+            "NacCM_array must have shape (n_setups, 3), with columns [x, y, z]."
+        )
+
+    n_setups = len(NacCM_array)
+
+    # --------------------------------------------------
+    # Labels, colors, and markers
+    # --------------------------------------------------
+    if labels is None:
+        labels = [f"Setup {i+1}" for i in range(n_setups)]
+
+    if colors is None:
+        colors = ["0.7"] * n_setups
+
+    if markers is None:
+        markers = ["o"] * n_setups
+
+    if not (len(labels) == len(colors) == len(markers) == n_setups):
+        raise ValueError(
+            "labels, colors, and markers must each contain one entry per setup."
+        )
+
+    # --------------------------------------------------
+    # Coordinates and RMS
+    # --------------------------------------------------
+    x_cm = NacCM_array[:, 0]
+    y_cm = NacCM_array[:, 1]
+    z_cm = NacCM_array[:, 2]
+
+    rms_cm = np.sqrt(
+        x_cm**2 + y_cm**2 + z_cm**2
+    )
+
+    # --------------------------------------------------
+    # Automatic axis limits and ticks
+    # --------------------------------------------------
+    def get_axis_ticks(values, n_ticks=6):
+        """
+        Determine a rounded axis limit and generate evenly
+        spaced ticks between zero and the rounded limit.
+        """
+        max_val = np.max(np.abs(values))
+
+        if max_val == 0:
+            max_val = 1.0
+
+        # Round maximum upward to a convenient number
+        magnitude = 10 ** np.floor(np.log10(max_val))
+        rounded_max = np.ceil(max_val / magnitude * 2) / 2 * magnitude
+
+        # round ticks to (def.) 3 decimals
+        # ticks = np.linspace( 0, rounded_max, n_ticks )
+        
+        # round ticks to 1-decimal
+        ticks = np.round( np.linspace(0, rounded_max, n_ticks), 1 )
+
+        return rounded_max, ticks
+
+    x_max, x_ticks = get_axis_ticks(x_cm, n_ticks)
+    y_max, y_ticks = get_axis_ticks(y_cm, n_ticks)
+    z_max, z_ticks = get_axis_ticks(z_cm, n_ticks)
+
+    # --------------------------------------------------
+    # Figure
+    # --------------------------------------------------
+    fig, ax = plt.subplots(1, 2, figsize=figsize)
+    fig.suptitle(title)
+
+    # --------------------------------------------------
+    # Plot (0,0): x versus z
+    # --------------------------------------------------
+    for i in range(n_setups):
+        ax[0].scatter(
+            x_cm[i], z_cm[i],
+            color=colors[i],
+            marker=markers[i],
+            s=markersize,
+            edgecolor="black",
+            label=f"{labels[i]}, (r={rms_cm[i]:.3f} m)",
+            zorder=3,
+        )
+
+    # Tower-top
+    ax[0].scatter(
+        0, 0,
+        color="black",
+        marker="D",
+        s=180,
+        zorder=5,
+        label="Tower-Top",
+    )
+
+    ax[0].annotate(
+        "Tower-Top",
+        xy=(0, 0),
+        xytext=(-10, 10),
+        textcoords="offset points",
+        ha="right",
+        va="bottom",
+        fontweight="bold",
+    )
+
+    ax[0].set_xlabel("x [m]")
+    ax[0].set_ylabel("z [m]")
+
+    # Origin at bottom-right
+    ax[0].set_xlim(-x_max, 0)
+    ax[0].set_ylim(0, z_max)
+
+    ax[0].set_xticks(-x_ticks[::-1])
+    ax[0].set_yticks(z_ticks)
+
+    ax[0].set_title("(a) x-z plane")
+
+    # --------------------------------------------------
+    # Plot (0,1): y versus x
+    # --------------------------------------------------
+    for i in range(n_setups):
+        ax[1].scatter(
+            y_cm[i], x_cm[i],
+            color=colors[i],
+            marker=markers[i],
+            s=markersize,
+            edgecolor="black",
+            zorder=3,
+        )
+
+    # Tower-top
+    ax[1].scatter(
+        0, 0,
+        color="black",
+        marker="D",
+        s=180,
+        zorder=5,
+        label="Tower-Top",
+    )
+
+    ax[1].annotate(
+        "Tower-Top",
+        xy=(0, 0),
+        xytext=(-10, 10),
+        textcoords="offset points",
+        ha="right",
+        va="bottom",
+        fontweight="bold",
+    )
+
+    ax[1].set_xlabel("y [m]")
+    ax[1].set_ylabel("x [m]")
+
+    # Origin at bottom-right
+    ax[1].set_xlim(-y_max, 0)
+    ax[1].set_ylim(0, -x_max)
+
+    ax[1].set_xticks(-y_ticks[::-1])
+    ax[1].set_yticks(-x_ticks)
+
+    ax[1].set_title("(b) y-x plane")
+
+    # --------------------------------------------------
+    # Formatting
+    # --------------------------------------------------
+    for axi in ax:
+        axi.grid(True, linestyle=":", alpha=0.5)
+
+    # Shared legend (avoid duplicate entries)
+    handles, legend_labels = ax[0].get_legend_handles_labels()
+
+    fig.legend(
+        handles,
+        legend_labels,
+        loc="lower center",
+        ncol=2,
+        bbox_to_anchor=(0.5, -0.04),
+    )
+
+    fig.tight_layout(rect=[0, 0.10, 1, 0.94])
+
+    return fig, ax
