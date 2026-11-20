@@ -73,7 +73,8 @@ def parse_variables_from_csv_to_dict(
     # output init
     outputs_dict = {}
     outputs_dict["name"] = []
-    outputs_dict[ str_max_Tmoor_anchor ] = []
+    if any("Tmoor" in var for var in lst_variables):
+        outputs_dict[ str_max_Tmoor_anchor ] = []
 
     # loop over each output csv
     for i, csv_dir in enumerate(lst_csv_outputs):
