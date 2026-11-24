@@ -90,7 +90,33 @@ def parse_variables_from_csv_to_dict(
         # loop each variable in this csv
         for iv, var in enumerate(lst_variables):
             if var not in outputs_dict.keys(): outputs_dict[ var ] = []
-            outputs_dict[ var ].append( dict_vals[ var ] )
+
+            # Rigid Body Periods
+            # from Made4Wind project insighrs:
+            # - discrepancy in roll and pitch nat periods
+            # - is due to the coupling of these modes to 
+            # - flexible tower modes (which are not modeled in RAFT)
+            # ! coz tower flexible in WISDEM, take pitch, roll from wisdem's floatingSE
+            if "raft.rigid_body_periods" in var:
+                raft_rbm = np.asarray( eval(
+                    str( dict_vals[ var ] )
+                    ), dtype=float
+                )
+                wisdem_roll_rbm = eval(
+                    str( dict_vals[ "floatingse.roll_period" ] )
+                )
+                wisdem_pitch_rbm = eval(
+                    str( dict_vals[ "floatingse.pitch_period" ] )
+                )
+                raft_rbm[3] = wisdem_roll_rbm
+                raft_rbm[4] = wisdem_pitch_rbm
+                # store
+                outputs_dict[ var ].append(
+                    str(raft_rbm)
+                )
+
+            else:
+                outputs_dict[ var ].append( dict_vals[ var ] )
 
             # Tendon-tension
             # = given tendon_index's anchor
