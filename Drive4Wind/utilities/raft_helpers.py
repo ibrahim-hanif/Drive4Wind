@@ -112,7 +112,7 @@ def parse_variables_from_csv_to_dict(
                 raft_rbm[4] = wisdem_pitch_rbm
                 # store
                 outputs_dict[ var ].append(
-                    str(raft_rbm)
+                    str(raft_rbm.tolist())
                 )
 
             else:
