@@ -146,7 +146,7 @@ def plot_bars_force_moment_loads(
         name_col="name",
         design_labels=None,
         colors=None,
-        figsize=(14, 6),
+        figsize=(14, 14),
         show_percent=False,
         reference_index=0,
         percent_decimals=1,
@@ -290,8 +290,8 @@ def plot_bars_force_moment_loads(
     # ============================================================
 
     fig, axs = plt.subplots(
-        1,
         2,
+        1,
         figsize=figsize
     )
 
